@@ -40,7 +40,7 @@
         <action
             android:id="@+id/action_registerFragment_to_navigation_home"
             app:destination="@id/navigation_home"
-            app:popUpTo="@id/splashFragment"
+            app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
     </fragment>
 

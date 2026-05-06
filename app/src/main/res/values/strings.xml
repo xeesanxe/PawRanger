@@ -32,4 +32,6 @@
     <string name="register_button_text">DAFTAR</string>
     <string name="login_footer">Sudah punya akun? Masuk</string>
     <string name="back_icon_desc">Back</string>
+    <string name="map_placeholder_text">Peta Lokasi Anda</string>
+    <string name="tap_to_sos">Tap to SOS</string>
 </resources>
