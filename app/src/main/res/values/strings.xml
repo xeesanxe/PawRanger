@@ -1,3 +1,37 @@
 <resources>
     <string name="app_name">PawRanger</string>
+    <string name="title_home">Home</string>
+    <string name="title_chat">Chat</string>
+    <string name="title_contacts">Kontak Darurat</string>
+    <string name="title_history">History</string>
+    <string name="title_profile">Profile</string>
+    <string name="sos_button">SOS</string>
+    <string name="login_title">Selamat Datang Kembali</string>
+    <string name="login_subtitle">Masuk untuk tetap terlindungi</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="login_button_text">MASUK</string>
+    <string name="register_footer">Belum punya akun? Daftar</string>
+
+    <!-- Previous ones kept for consistency if needed elsewhere -->
+    <string name="welcome_user">Halo (user)</string>
+    <string name="add_contact">Tambah Kontak</string>
+    <string name="back_to_home">Back to Home</string>
+    <string name="history_panggilan">History Panggilan SOS</string>
+    <string name="name_label">Nama</string>
+    <string name="phone_label">No Telp</string>
+    <string name="info_label">Info</string>
+    <string name="register_title">Buat Akun SafeWalk</string>
+    <string name="register_subtitle">Lengkapi data untuk keamanan Anda</string>
+    <string name="name_hint">Nama Lengkap</string>
+    <string name="phone_hint">Nomor Telepon</string>
+    <string name="gender_label">Jenis Kelamin</string>
+    <string name="gender_male">Laki-laki</string>
+    <string name="gender_female">Perempuan</string>
+    <string name="confirm_password_hint">Konfirmasi Password</string>
+    <string name="register_button_text">DAFTAR</string>
+    <string name="login_footer">Sudah punya akun? Masuk</string>
+    <string name="back_icon_desc">Back</string>
+    <string name="map_placeholder_text">Peta Lokasi Anda</string>
+    <string name="tap_to_sos">Tap to SOS</string>
 </resources>
