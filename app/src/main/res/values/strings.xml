@@ -1,37 +1,42 @@
 <resources>
     <string name="app_name">PawRanger</string>
+    <string name="splash_text">Fineed</string>
+    <string name="welcome_user_home">Halo, Aliya</string>
+    <string name="status_aman">Status: Aman</string>
+    <string name="sos_instruction">TEKAN LAMA UNTUK BANTUAN</string>
+    <string name="sos_label">SOS</string>
+    <string name="profile_label_home">Profil Saya</string>
+    <string name="user_full_name">Aliya Nur Azizah</string>
     <string name="title_home">Home</string>
     <string name="title_chat">Chat</string>
-    <string name="title_contacts">Kontak Darurat</string>
+    <string name="title_kontak">Kontak</string>
     <string name="title_history">History</string>
-    <string name="title_profile">Profile</string>
-    <string name="sos_button">SOS</string>
+    <string name="profile_pic_desc">Foto Profil</string>
+    <string name="status_icon_desc">Ikon Status</string>
+    <string name="edit_profile_desc">Edit Profil</string>
+
+    <!-- Login -->
     <string name="login_title">Selamat Datang Kembali</string>
     <string name="login_subtitle">Masuk untuk tetap terlindungi</string>
-    <string name="email_hint">Email</string>
-    <string name="password_hint">Password</string>
-    <string name="login_button_text">MASUK</string>
-    <string name="register_footer">Belum punya akun? Daftar</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Password</string>
+    <string name="btn_login_label">MASUK</string>
+    <string name="footer_login">Belum punya akun? Daftar</string>
 
-    <!-- Previous ones kept for consistency if needed elsewhere -->
-    <string name="welcome_user">Halo (user)</string>
-    <string name="add_contact">Tambah Kontak</string>
-    <string name="back_to_home">Back to Home</string>
-    <string name="history_panggilan">History Panggilan SOS</string>
-    <string name="name_label">Nama</string>
-    <string name="phone_label">No Telp</string>
-    <string name="info_label">Info</string>
+    <!-- Register -->
     <string name="register_title">Buat Akun SafeWalk</string>
     <string name="register_subtitle">Lengkapi data untuk keamanan Anda</string>
-    <string name="name_hint">Nama Lengkap</string>
-    <string name="phone_hint">Nomor Telepon</string>
-    <string name="gender_label">Jenis Kelamin</string>
+    <string name="hint_name">Nama Lengkap</string>
+    <string name="hint_phone">Nomor Telepon</string>
+    <string name="label_gender">Jenis Kelamin</string>
     <string name="gender_male">Laki-laki</string>
     <string name="gender_female">Perempuan</string>
-    <string name="confirm_password_hint">Konfirmasi Password</string>
-    <string name="register_button_text">DAFTAR</string>
-    <string name="login_footer">Sudah punya akun? Masuk</string>
-    <string name="back_icon_desc">Back</string>
-    <string name="map_placeholder_text">Peta Lokasi Anda</string>
-    <string name="tap_to_sos">Tap to SOS</string>
+    <string name="hint_confirm_password">Konfirmasi Password</string>
+    <string name="btn_register_label">DAFTAR</string>
+    <string name="footer_register">Sudah punya akun? Masuk</string>
+    <string name="title_profile">Profil</string>
+    <string name="label_email_dummy">aliya.nur@example.com</string>
+    <string name="btn_edit_profile_label">Edit Profil</string>
+    <string name="btn_logout_label">Logout</string>
+    <string name="title_pesan">Pesan</string>
 </resources>
