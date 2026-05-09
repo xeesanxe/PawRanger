@@ -6,8 +6,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationBarView
 
 class MainActivity : AppCompatActivity() {
@@ -27,7 +27,30 @@ class MainActivity : AppCompatActivity() {
         val bottomNav = findViewById<View>(R.id.bottom_navigation)
         
         if (bottomNav is NavigationBarView) {
-            bottomNav.setupWithNavController(navController)
+            bottomNav.setOnItemSelectedListener { item ->
+                val navOptions = NavOptions.Builder()
+                    .setLaunchSingleTop(true)
+                    .setRestoreState(true)
+                    .setPopUpTo(
+                        navController.graph.startDestinationId,
+                        inclusive = false,
+                        saveState = true
+                    )
+                    .setEnterAnim(R.anim.fade_in)
+                    .setExitAnim(R.anim.fade_out)
+                    .setPopEnterAnim(R.anim.fade_in)
+                    .setPopExitAnim(R.anim.fade_out)
+                    .build()
+                
+                navController.navigate(item.itemId, null, navOptions)
+                true
+            }
+            // Sync current destination with bottom nav
+            navController.addOnDestinationChangedListener { _, destination, _ ->
+                bottomNav.menu.findItem(destination.id)?.let {
+                    it.isChecked = true
+                }
+            }
         }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->

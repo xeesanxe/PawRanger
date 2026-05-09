@@ -45,7 +45,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
 
         view.findViewById<View>(R.id.iv_profile_top).setOnClickListener {
-            findNavController().navigate(R.id.navigation_profile)
+            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
         }
 
         startPulseAnimation(view.findViewById(R.id.v_glow_1), 1.4f)

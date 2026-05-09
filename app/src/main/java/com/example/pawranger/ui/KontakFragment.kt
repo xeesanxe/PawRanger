@@ -8,7 +8,6 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.example.pawranger.R
 import com.example.pawranger.data.Contact
@@ -43,11 +42,6 @@ class KontakFragment : Fragment() {
         // Tombol Tambah di Kiri Atas
         view.findViewById<ImageButton>(R.id.btn_add_contact_top).setOnClickListener {
             showAddContactDialog()
-        }
-
-        // Tombol Back di Kanan Atas
-        view.findViewById<ImageButton>(R.id.btn_back_kontak).setOnClickListener {
-            findNavController().navigateUp()
         }
     }
 

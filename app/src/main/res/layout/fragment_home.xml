@@ -53,7 +53,10 @@
         app:shapeAppearanceOverlay="@style/CircleShape"
         android:contentDescription="@string/profile_label_home"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackgroundBorderless" />
 
     <!-- Status Badge -->
     <LinearLayout
