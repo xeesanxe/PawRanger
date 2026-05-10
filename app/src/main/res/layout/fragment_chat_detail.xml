@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_light">
+
+    <!-- Header -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cv_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="4dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/white"
+            android:paddingHorizontal="16dp">
+
+            <ImageButton
+                android:id="@+id/btn_back_chat"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                android:rotation="180"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/primary_dark"
+                android:contentDescription="Kembali" />
+
+            <TextView
+                android:id="@+id/tv_detail_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ibu"
+                android:textColor="@color/primary_dark"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_dialog_info"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/primary_dark"
+                android:contentDescription="Informasi" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Chat Messages -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/cv_input"
+        app:layout_constraintTop_toBottomOf="@id/cv_header">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Hari Ini"
+                android:textColor="@color/gray_text"
+                android:textSize="12sp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Received Text Message -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_chat_received"
+                    android:padding="12dp"
+                    android:text="Lagi dimana nak? Pulang jam berapa? Hujan nih di sini."
+                    android:textColor="@color/primary_dark"
+                    android:maxWidth="260dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="17:30"
+                    android:textColor="@color/gray_text"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Received Voice Note Message -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="220dp"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_chat_received"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="8dp">
+
+                    <ImageButton
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_unread_count"
+                        android:contentDescription="Putar"
+                        android:padding="8dp"
+                        android:src="@android:drawable/ic_media_play"
+                        app:tint="@color/primary_dark"
+                        tools:ignore="TouchTargetSizeCheck" />
+
+                    <!-- Fake Waveform -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <View android:layout_width="2dp" android:layout_height="10dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="18dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="12dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="22dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="14dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="18dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="10dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="16dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="20dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                        <View android:layout_width="2dp" android:layout_height="12dp" android:background="@color/status_green" android:layout_marginEnd="2dp"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:15"
+                        android:textColor="@color/primary_dark"
+                        android:textSize="12sp"
+                        android:layout_marginEnd="4dp"/>
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="17:35"
+                    android:textColor="@color/gray_text"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- Sent Message -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_chat_sent"
+                    android:padding="12dp"
+                    android:text="Masih di jalan Bu, ini lagi neduh sebentar. Aman kok."
+                    android:textColor="@color/primary_dark"
+                    android:maxWidth="260dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="17:45"
+                    android:textColor="@color/gray_text"
+                    android:textSize="10sp"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Input Bar -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cv_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="2dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp">
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@android:drawable/ic_input_add"
+                app:tint="@color/status_green"
+                android:contentDescription="Tambah" />
+
+            <EditText
+                android:id="@+id/et_message"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="Tulis pesan..."
+                android:inputType="text"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/gray_text"
+                android:autofillHints="none" />
+
+            <ImageButton
+                android:id="@+id/btn_voice_note"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Voice Note"
+                android:padding="8dp"
+                android:src="@android:drawable/ic_btn_speak_now"
+                app:tint="@color/status_green"
+                tools:ignore="TouchTargetSizeCheck" />
+
+            <ImageButton
+                android:id="@+id/btn_send_message"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_send"
+                app:tint="@color/status_green"
+                android:padding="8dp"
+                android:visibility="gone"
+                android:contentDescription="Kirim" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
