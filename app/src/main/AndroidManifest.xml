@@ -4,8 +4,7 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -26,10 +25,10 @@
             </intent-filter>
         </activity>
 
-        <!-- Tambahkan API Key Google Maps di sini -->
+        <!-- Menambahkan API Key Google Maps di sini -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY_HERE" />
+            android:value="${MAPS_API_KEY}"
+            tools:replace="android:value"/>
     </application>
-
 </manifest>
