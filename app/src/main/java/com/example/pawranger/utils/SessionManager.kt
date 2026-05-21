@@ -9,6 +9,7 @@ class SessionManager(context: Context) {
     companion object {
         private const val IS_LOGGED_IN = "isLoggedIn"
         private const val USER_NAME = "userName"
+        private const val USER_EMAIL = "userEmail"
     }
 
     fun setLoggedIn(isLoggedIn: Boolean) {
@@ -25,6 +26,14 @@ class SessionManager(context: Context) {
 
     fun getUserName(): String? {
         return prefs.getString(USER_NAME, "Aliya")
+    }
+
+    fun saveEmail(email: String) {
+        prefs.edit().putString(USER_EMAIL, email).apply()
+    }
+
+    fun getEmail(): String? {
+        return prefs.getString(USER_EMAIL, "aliya.nur@gmail.com")
     }
 
     fun logout() {

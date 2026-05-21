@@ -4,13 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageButton
-import android.widget.Toast
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.R
 import com.example.pawranger.utils.SessionManager
+import com.google.android.material.card.MaterialCardView
 
 class ProfileFragment : Fragment() {
     private lateinit var sessionManager: SessionManager
@@ -23,13 +23,24 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Set data user dari session
+        val userName = sessionManager.getUserName() ?: "Budi Santoso"
+        view.findViewById<TextView>(R.id.tv_profile_name_header).text = userName
+        view.findViewById<TextView>(R.id.tv_profile_name).text = userName
+
         view.findViewById<ImageButton>(R.id.btn_back).setOnClickListener {
             findNavController().navigateUp()
         }
 
-        view.findViewById<Button>(R.id.btn_logout).setOnClickListener {
+        // Logout
+        view.findViewById<MaterialCardView>(R.id.btn_logout).setOnClickListener {
             sessionManager.setLoggedIn(false)
-            findNavController().navigate(R.id.splashFragment)
+            findNavController().navigate(R.id.loginFragment)
+        }
+        
+        // Setup klik untuk edit (bisa ditambahkan dialog nanti)
+        view.findViewById<View>(R.id.iv_edit_name).setOnClickListener { 
+            // Aksi edit nama
         }
     }
 }

@@ -8,7 +8,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
-import com.google.android.material.navigation.NavigationBarView
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,17 +17,22 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            // Hanya berikan padding atas untuk status bar
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
             insets
         }
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         val navController = navHostFragment.navController
-        val bottomNav = findViewById<View>(R.id.bottom_navigation)
+        val bottomNavContainer = findViewById<View>(R.id.cv_bottom_nav)
+        val bottomNavView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+
+        // Berikan padding bawah pada NavHost agar konten tidak tertutup bottom nav melayang
+        findViewById<View>(R.id.nav_host_fragment).setPadding(0, 0, 0, 100)
         
-        if (bottomNav is NavigationBarView) {
-            bottomNav.setOnItemSelectedListener { item ->
+        if (bottomNavView != null) {
+            bottomNavView.setOnItemSelectedListener { item ->
                 val navOptions = NavOptions.Builder()
                     .setLaunchSingleTop(true)
                     .setRestoreState(true)
@@ -36,10 +41,6 @@ class MainActivity : AppCompatActivity() {
                         inclusive = false,
                         saveState = true
                     )
-                    .setEnterAnim(R.anim.fade_in)
-                    .setExitAnim(R.anim.fade_out)
-                    .setPopEnterAnim(R.anim.fade_in)
-                    .setPopExitAnim(R.anim.fade_out)
                     .build()
                 
                 navController.navigate(item.itemId, null, navOptions)
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity() {
             }
             // Sync current destination with bottom nav
             navController.addOnDestinationChangedListener { _, destination, _ ->
-                bottomNav.menu.findItem(destination.id)?.let {
+                bottomNavView.menu.findItem(destination.id)?.let {
                     it.isChecked = true
                 }
             }
@@ -56,10 +57,10 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
                 R.id.splashFragment, R.id.loginFragment, R.id.registerFragment, R.id.navigation_profile -> {
-                    bottomNav.visibility = View.GONE
+                    bottomNavContainer?.visibility = View.GONE
                 }
                 else -> {
-                    bottomNav.visibility = View.VISIBLE
+                    bottomNavContainer?.visibility = View.VISIBLE
                 }
             }
         }

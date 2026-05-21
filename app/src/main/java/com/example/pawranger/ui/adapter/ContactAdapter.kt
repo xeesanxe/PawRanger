@@ -30,7 +30,7 @@ class ContactAdapter(
         holder.tvPhone.text = contact.phoneNumber
         
         holder.ivDelete.setOnClickListener {
-            val currentPosition = holder.bindingAdapterPosition
+            val currentPosition = holder.adapterPosition
             if (currentPosition != RecyclerView.NO_POSITION) {
                 val contactToDelete = contacts[currentPosition]
                 onDeleteClick(contactToDelete)

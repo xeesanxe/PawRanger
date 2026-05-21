@@ -38,7 +38,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Ibu"
-                android:textColor="@color/primary_dark"
+                android:textColor="@color/black"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -95,7 +95,7 @@
                     android:background="@drawable/bg_chat_received"
                     android:padding="12dp"
                     android:text="Lagi dimana nak? Pulang jam berapa? Hujan nih di sini."
-                    android:textColor="@color/primary_dark"
+                    android:textColor="@color/black"
                     android:maxWidth="260dp" />
 
                 <TextView
@@ -157,7 +157,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="00:15"
-                        android:textColor="@color/primary_dark"
+                        android:textColor="@color/black"
                         android:textSize="12sp"
                         android:layout_marginEnd="4dp"/>
 
@@ -186,7 +186,7 @@
                     android:background="@drawable/bg_chat_sent"
                     android:padding="12dp"
                     android:text="Masih di jalan Bu, ini lagi neduh sebentar. Aman kok."
-                    android:textColor="@color/primary_dark"
+                    android:textColor="@color/black"
                     android:maxWidth="260dp" />
 
                 <TextView
