@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -41,7 +42,11 @@ class ChatFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.iv_profile_top)?.setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
+            findNavController().navigate(R.id.action_navigation_chat_to_navigation_profile)
+        }
+
+        view.findViewById<View>(R.id.fab_new_chat)?.setOnClickListener {
+            findNavController().navigate(R.id.navigation_kontak)
         }
     }
 }

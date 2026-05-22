@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Outer Shield Border -->
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M50,5 L15,20 L15,50 C15,75 50,95 50,95 C50,95 85,75 85,50 L85,20 Z" />
+
+    <!-- Inner Shield Body -->
+    <path
+        android:fillColor="#2A0A0A"
+        android:pathData="M50,12 L22,27 L22,50 C22,70 50,87 50,87 C50,87 78,70 78,50 L78,27 Z" />
+
+    <!-- Paw Print - Large Pad -->
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M50,65 A12,12 0 1,1 50.1,65 Z" />
+
+    <!-- Paw Print - Small Toes -->
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M35,48 A5,5 0 1,1 35.1,48 Z" />
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M45,42 A5,5 0 1,1 45.1,42 Z" />
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M55,42 A5,5 0 1,1 55.1,42 Z" />
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M65,48 A5,5 0 1,1 65.1,48 Z" />
+
+    <!-- Exclamation Mark -->
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M48,20 L52,20 L51,32 L49,32 Z" />
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M50,38 A2,2 0 1,1 50.1,38 Z" />
+
+</vector>

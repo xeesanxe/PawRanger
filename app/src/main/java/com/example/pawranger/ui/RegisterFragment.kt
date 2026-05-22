@@ -27,8 +27,12 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val etName = view.findViewById<EditText>(R.id.et_name)
+        val etUsername = view.findViewById<EditText>(R.id.et_username)
+        val etFullName = view.findViewById<EditText>(R.id.et_name)
         val etEmail = view.findViewById<EditText>(R.id.et_register_email)
+        val etPhone = view.findViewById<EditText>(R.id.et_phone)
+        val etPassword = view.findViewById<EditText>(R.id.et_register_password)
+        val etConfirmPassword = view.findViewById<EditText>(R.id.et_confirm_password)
         val btnRegister = view.findViewById<Button>(R.id.btn_register)
         val cbTerms = view.findViewById<CheckBox>(R.id.cb_terms)
 
@@ -38,17 +42,32 @@ class RegisterFragment : Fragment() {
         )
 
         btnRegister.setOnClickListener {
-            val name = etName.text.toString()
+            val username = etUsername.text.toString()
+            val fullName = etFullName.text.toString()
             val email = etEmail.text.toString()
+            val phone = etPhone.text.toString()
+            val password = etPassword.text.toString()
+            val confirmPassword = etConfirmPassword.text.toString()
 
-            if (name.isNotEmpty() && email.isNotEmpty()) {
+            if (username.isNotEmpty() && fullName.isNotEmpty() && email.isNotEmpty() && phone.isNotEmpty() && password.isNotEmpty()) {
+                if (password != confirmPassword) {
+                    Toast.makeText(requireContext(), "Password tidak cocok", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                
+                if (!cbTerms.isChecked) {
+                    Toast.makeText(requireContext(), "Anda harus menyetujui S&K", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
                 // Simpan data ke session
-                sessionManager.setLoggedIn(true)
-                sessionManager.saveUserName(name)
+                sessionManager.saveUserName(username)
+                sessionManager.saveFullName(fullName)
                 sessionManager.saveEmail(email)
+                sessionManager.savePhone(phone)
 
-                Toast.makeText(requireContext(), "Registrasi Berhasil!", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.action_registerFragment_to_navigation_home)
+                Toast.makeText(requireContext(), "Registrasi Berhasil! Silakan Login.", Toast.LENGTH_SHORT).show()
+                findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
             } else {
                 Toast.makeText(requireContext(), "Mohon isi semua data", Toast.LENGTH_SHORT).show()
             }

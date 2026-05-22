@@ -57,52 +57,7 @@
             android:textColor="@color/gray_text"
             android:textSize="14sp" />
 
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:scrollbars="none">
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/filter_all"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    app:backgroundTint="@color/primary_blue"
-                    app:cornerRadius="24dp"
-                    android:paddingHorizontal="20dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="@string/filter_emergency"
-                    android:textAllCaps="false"
-                    android:textColor="@color/gray_text"
-                    app:cornerRadius="24dp"
-                    app:strokeColor="#E0E0E0"
-                    android:paddingHorizontal="20dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:text="@string/filter_checkins"
-                    android:textAllCaps="false"
-                    android:textColor="@color/gray_text"
-                    app:cornerRadius="24dp"
-                    app:strokeColor="#E0E0E0"
-                    android:paddingHorizontal="20dp" />
-            </LinearLayout>
-        </HorizontalScrollView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_call_history"

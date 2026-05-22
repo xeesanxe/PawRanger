@@ -4,20 +4,26 @@
     <color name="white">#FFFFFFFF</color>
     <color name="panic_red">#D32F2F</color>
     <color name="gray_text">#757575</color>
-    <color name="bg_light">#F7F8FA</color>
-    <color name="input_bg">#F2F4F7</color>
+    <color name="bg_light">#F5FBF7</color> <!-- Latar belakang mint sangat muda -->
+    <color name="input_bg">#EDF2F0</color>
+
+    <!-- Design Image Palette -->
+    <color name="design_sage">#748E74</color>
+    <color name="design_input_bg">#DCE4E1</color>
+    <color name="design_bg">#FDFDFB</color>
+    <color name="design_text">#1A4D40</color>
 
     <!-- Navigation Theme -->
-    <color name="nav_selected_bg">#1E2066</color>
-    <color name="nav_active_item">#A1A6FF</color>
-    <color name="nav_inactive_item">#505050</color>
+    <color name="nav_selected_bg">#D0F040</color> <!-- Lime Green untuk indikator aktif -->
+    <color name="nav_active_item">#1A4D40</color> <!-- Hijau Tua untuk ikon/teks aktif -->
+    <color name="nav_inactive_item">#757575</color>
 
-    <!-- Apple Maps Style Theme -->
-    <color name="primary_blue">#0A84FF</color>
-    <color name="dark_navy">#1C2229</color>
-    <color name="card_navy">#252B33</color>
-    <color name="accent_blue">#64D2FF</color>
-    <color name="light_blue">#D1F2FF</color>
+    <!-- New Design Style Palette -->
+    <color name="primary_blue">#1A4D40</color> <!-- Hijau Tua untuk Header/Judul -->
+    <color name="dark_navy">#1A4D40</color>
+    <color name="card_navy">#253331</color>
+    <color name="accent_blue">#D0F040</color> <!-- Lime Green aksen -->
+    <color name="light_blue">#C8E6C9</color> <!-- Hijau Muda untuk kartu/tab -->
 
     <!-- Legacy names mapping -->
     <color name="status_green">@color/accent_blue</color>

@@ -46,11 +46,7 @@ class KontakFragment : Fragment() {
         }
 
         view.findViewById<View>(R.id.iv_profile_top)?.setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
-        }
-
-        view.findViewById<View>(R.id.fab_emergency)?.setOnClickListener {
-            Toast.makeText(requireContext(), "DARURAT! Sinyal SOS dikirim.", Toast.LENGTH_LONG).show()
+            findNavController().navigate(R.id.action_navigation_kontak_to_navigation_profile)
         }
     }
 
