@@ -9,7 +9,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
 
     companion object {
         private const val DATABASE_NAME = "PawRanger.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
         private const val TABLE_CONTACTS = "contacts"
         private const val KEY_ID = "id"
         private const val KEY_NAME = "name"
@@ -22,6 +22,11 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
                 + KEY_NAME + " TEXT,"
                 + KEY_PHONE + " TEXT" + ")")
         db.execSQL(createTable)
+
+        // Tambahkan kontak default: Ayah, Ibu, Kakak
+        db.execSQL("INSERT INTO $TABLE_CONTACTS ($KEY_NAME, $KEY_PHONE) VALUES ('Ayah', '08123456789')")
+        db.execSQL("INSERT INTO $TABLE_CONTACTS ($KEY_NAME, $KEY_PHONE) VALUES ('Ibu', '08129876543')")
+        db.execSQL("INSERT INTO $TABLE_CONTACTS ($KEY_NAME, $KEY_PHONE) VALUES ('Kakak', '08134567890')")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {

@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -21,10 +22,23 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val etEmail = view.findViewById<EditText>(R.id.et_email)
+        
         view.findViewById<Button>(R.id.btn_login).setOnClickListener {
-            // Simpan status login
-            sessionManager.setLoggedIn(true)
-            findNavController().navigate(R.id.action_loginFragment_to_navigation_home)
+            val email = etEmail.text.toString()
+            if (email.isNotEmpty()) {
+                // Simpan status login dan data user
+                sessionManager.setLoggedIn(true)
+                sessionManager.saveEmail(email)
+                
+                // Ambil nama dari email (misal: aliya.nur@gmail.com -> aliya.nur)
+                val userName = email.substringBefore("@")
+                sessionManager.saveUserName(userName)
+                
+                findNavController().navigate(R.id.action_loginFragment_to_navigation_home)
+            } else {
+                etEmail.error = "Email harus diisi"
+            }
         }
 
         view.findViewById<TextView>(R.id.tv_register_footer).setOnClickListener {

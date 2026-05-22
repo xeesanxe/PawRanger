@@ -39,5 +39,9 @@ class ChatFragment : Fragment() {
             val bundle = bundleOf("senderName" to chat.senderName)
             findNavController().navigate(R.id.action_navigation_chat_to_chatDetailFragment, bundle)
         }
+
+        view.findViewById<View>(R.id.iv_profile_top)?.setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
+        }
     }
 }
