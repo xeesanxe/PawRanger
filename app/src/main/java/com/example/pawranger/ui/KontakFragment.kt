@@ -16,29 +16,30 @@ import com.example.pawranger.data.DatabaseHelper
 import com.example.pawranger.ui.adapter.ContactAdapter
 import com.google.android.material.textfield.TextInputEditText
 
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.example.pawranger.data.ContactRepository
+
 class KontakFragment : Fragment() {
-    private lateinit var dbHelper: DatabaseHelper
+    private lateinit var repository: ContactRepository
     private lateinit var adapter: ContactAdapter
     private var contacts = mutableListOf<Contact>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        dbHelper = DatabaseHelper(requireContext())
+        repository = ContactRepository()
         return inflater.inflate(R.layout.fragment_kontak, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        loadContacts()
-
         val rvContacts = view.findViewById<RecyclerView>(R.id.rv_contacts)
         adapter = ContactAdapter(contacts) { contact ->
-            dbHelper.deleteContact(contact.name)
-            loadContacts()
-            adapter.notifyDataSetChanged()
-            Toast.makeText(requireContext(), "Kontak dihapus", Toast.LENGTH_SHORT).show()
+            deleteContact(contact.name)
         }
         rvContacts.adapter = adapter
+
+        loadContacts()
 
         // Tombol Tambah
         view.findViewById<View>(R.id.btn_add_contact).setOnClickListener {
@@ -67,10 +68,7 @@ class KontakFragment : Fragment() {
 
                 if (name.isNotEmpty() && phone.isNotEmpty()) {
                     val newContact = Contact(name, phone)
-                    dbHelper.addContact(newContact)
-                    loadContacts()
-                    adapter.notifyDataSetChanged()
-                    Toast.makeText(requireContext(), "Kontak berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                    addContact(newContact)
                 } else {
                     Toast.makeText(requireContext(), "Nama dan Nomor tidak boleh kosong", Toast.LENGTH_SHORT).show()
                 }
@@ -80,8 +78,39 @@ class KontakFragment : Fragment() {
     }
 
     private fun loadContacts() {
-        val dbContacts = dbHelper.getAllContacts()
-        contacts.clear()
-        contacts.addAll(dbContacts)
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val supabaseContacts = repository.getContacts()
+                contacts.clear()
+                contacts.addAll(supabaseContacts)
+                adapter.notifyDataSetChanged()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Gagal memuat data: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun addContact(contact: Contact) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                repository.insertContact(contact)
+                loadContacts()
+                Toast.makeText(requireContext(), "Kontak berhasil disimpan ke Cloud", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Gagal menyimpan: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun deleteContact(name: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                repository.deleteContact(name)
+                loadContacts()
+                Toast.makeText(requireContext(), "Kontak dihapus dari Cloud", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Gagal menghapus: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
