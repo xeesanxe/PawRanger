@@ -1,4 +1,4 @@
-package com.example.pawranger.ui
+package com.example.pawranger
 
 import android.os.Bundle
 import android.text.Editable
@@ -12,7 +12,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.example.pawranger.R
 
 class ChatDetailFragment : Fragment() {
 

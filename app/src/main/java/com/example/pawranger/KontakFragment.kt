@@ -1,4 +1,4 @@
-package com.example.pawranger.ui
+package com.example.pawranger
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,12 +8,10 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.example.pawranger.R
 import com.example.pawranger.data.Contact
 import com.example.pawranger.data.DatabaseHelper
-import com.example.pawranger.ui.adapter.ContactAdapter
+import com.example.pawranger.adapter.ContactAdapter
 import com.google.android.material.textfield.TextInputEditText
 
 class KontakFragment : Fragment() {
@@ -40,17 +38,9 @@ class KontakFragment : Fragment() {
         }
         rvContacts.adapter = adapter
 
-        // Tombol Tambah
-        view.findViewById<View>(R.id.btn_add_contact).setOnClickListener {
+        // Tombol Tambah di Kiri Atas
+        view.findViewById<ImageButton>(R.id.btn_add_contact_top).setOnClickListener {
             showAddContactDialog()
-        }
-
-        view.findViewById<View>(R.id.iv_profile_top)?.setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
-        }
-
-        view.findViewById<View>(R.id.fab_emergency)?.setOnClickListener {
-            Toast.makeText(requireContext(), "DARURAT! Sinyal SOS dikirim.", Toast.LENGTH_LONG).show()
         }
     }
 

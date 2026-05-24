@@ -10,6 +10,17 @@ class SessionManager(context: Context) {
         private const val IS_LOGGED_IN = "isLoggedIn"
         private const val USER_NAME = "userName"
         private const val USER_EMAIL = "userEmail"
+        private const val USER_PHONE = "userPhone"
+        private const val PROFILE_IMAGE = "profileImage"
+        private const val IS_DARK_MODE = "isDarkMode"
+    }
+
+    fun setDarkMode(isDarkMode: Boolean) {
+        prefs.edit().putBoolean(IS_DARK_MODE, isDarkMode).apply()
+    }
+
+    fun isDarkMode(): Boolean {
+        return prefs.getBoolean(IS_DARK_MODE, false)
     }
 
     fun setLoggedIn(isLoggedIn: Boolean) {
@@ -28,12 +39,28 @@ class SessionManager(context: Context) {
         return prefs.getString(USER_NAME, "Aliya")
     }
 
-    fun saveEmail(email: String) {
+    fun saveUserEmail(email: String) {
         prefs.edit().putString(USER_EMAIL, email).apply()
     }
 
-    fun getEmail(): String? {
+    fun getUserEmail(): String? {
         return prefs.getString(USER_EMAIL, "aliya.nur@gmail.com")
+    }
+
+    fun saveUserPhone(phone: String) {
+        prefs.edit().putString(USER_PHONE, phone).apply()
+    }
+
+    fun getUserPhone(): String? {
+        return prefs.getString(USER_PHONE, "+62 812-3456-7890")
+    }
+
+    fun saveProfileImage(uri: String) {
+        prefs.edit().putString(PROFILE_IMAGE, uri).apply()
+    }
+
+    fun getProfileImage(): String? {
+        return prefs.getString(PROFILE_IMAGE, null)
     }
 
     fun logout() {

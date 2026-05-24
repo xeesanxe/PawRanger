@@ -1,4 +1,4 @@
-package com.example.pawranger.ui
+package com.example.pawranger
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,7 +9,6 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.example.pawranger.R
 import com.example.pawranger.utils.SessionManager
 
 class LoginFragment : Fragment() {
@@ -27,14 +26,8 @@ class LoginFragment : Fragment() {
         view.findViewById<Button>(R.id.btn_login).setOnClickListener {
             val email = etEmail.text.toString()
             if (email.isNotEmpty()) {
-                // Simpan status login dan data user
                 sessionManager.setLoggedIn(true)
-                sessionManager.saveEmail(email)
-                
-                // Ambil nama dari email (misal: aliya.nur@gmail.com -> aliya.nur)
-                val userName = email.substringBefore("@")
-                sessionManager.saveUserName(userName)
-                
+                sessionManager.saveUserEmail(email)
                 findNavController().navigate(R.id.action_loginFragment_to_navigation_home)
             } else {
                 etEmail.error = "Email harus diisi"
