@@ -11,10 +11,16 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.R
+import com.example.pawranger.data.MessageRepository
+import com.example.pawranger.utils.SessionManager
+import kotlinx.coroutines.launch
 
 class ChatDetailFragment : Fragment() {
+
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -26,7 +32,12 @@ class ChatDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val name = arguments?.getString("senderName") ?: "Shane Martinez"
+        sessionManager = SessionManager(requireContext())
+
+        val name = arguments?.getString("senderName") ?: "Chat"
+        val receiverId = arguments?.getString("receiverId") ?: ""
+        val currentUserId = sessionManager.getUserId() ?: ""
+
         view.findViewById<TextView>(R.id.tv_detail_name).text = name
 
         view.findViewById<ImageButton>(R.id.btn_back_chat).setOnClickListener {
@@ -51,18 +62,28 @@ class ChatDetailFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        btnVoice.setOnClickListener {
-            Toast.makeText(context, "Tekan lama untuk merekam pesan suara", Toast.LENGTH_SHORT).show()
+        btnSend.setOnClickListener {
+            val content = etMessage.text.toString().trim()
+            if (content.isEmpty()) return@setOnClickListener
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                val berhasil = MessageRepository.sendMessage(
+                    senderId = currentUserId,
+                    receiverId = receiverId,
+                    content = content
+                )
+                if (berhasil) {
+                    etMessage.text.clear()
+                    Toast.makeText(context, "Pesan terkirim!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Gagal mengirim pesan", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         btnVoice.setOnLongClickListener {
             Toast.makeText(context, "Merekam suara...", Toast.LENGTH_SHORT).show()
             true
-        }
-
-        btnSend.setOnClickListener {
-            Toast.makeText(context, "Pesan terkirim!", Toast.LENGTH_SHORT).show()
-            etMessage.text.clear()
         }
     }
 }

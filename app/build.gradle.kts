@@ -41,18 +41,27 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.activity.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.core.ktx)
+    // Material Design 3
     implementation(libs.material)
-    implementation(libs.androidx.navigation.fragment.ktx)
-    implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.play.services.maps)
-    implementation(libs.play.services.location)
+
+    // Supabase (versi dikontrol dari BOM)
+    implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.auth)
+    implementation(libs.supabase.realtime)
+
+    // Ktor engine - versi 3.x sesuai Supabase 3.x
     implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.core)
+
+    // Navigation
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+
+    // Google Maps
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.browser)
 

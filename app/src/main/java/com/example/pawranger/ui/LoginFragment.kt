@@ -4,13 +4,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
+import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.R
+import com.example.pawranger.data.SupabaseConfig
 import com.example.pawranger.utils.SessionManager
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
     private lateinit var sessionManager: SessionManager
@@ -22,22 +25,46 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         val etEmail = view.findViewById<EditText>(R.id.et_email)
-        
-        view.findViewById<Button>(R.id.btn_login).setOnClickListener {
-            val email = etEmail.text.toString()
-            if (email.isNotEmpty()) {
-                // Simpan status login dan data user
-                sessionManager.setLoggedIn(true)
-                sessionManager.saveEmail(email)
-                
-                // Ambil nama dari email (misal: aliya.nur@gmail.com -> aliya.nur)
-                val userName = email.substringBefore("@")
-                sessionManager.saveUserName(userName)
-                
-                findNavController().navigate(R.id.action_loginFragment_to_navigation_home)
-            } else {
-                etEmail.error = "Email harus diisi"
+        val etPassword = view.findViewById<EditText>(R.id.et_password)
+        val btnLogin = view.findViewById<Button>(R.id.btn_login)
+
+        btnLogin.setOnClickListener {
+            val emailInput = etEmail.text.toString().trim()
+            val password = etPassword.text.toString().trim()
+
+            if (emailInput.isEmpty() || password.isEmpty()) {
+                Toast.makeText(requireContext(), "Email dan password harus diisi", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            btnLogin.isEnabled = false
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    // Login ke Supabase Auth
+                    SupabaseConfig.client!!.auth.signInWith(Email) {
+                        this.email = emailInput
+                        this.password = password
+                    }
+
+                    // Ambil data user dari Supabase
+                    val user = SupabaseConfig.client!!.auth.currentUserOrNull()
+                    val userName = emailInput.substringBefore("@")
+
+                    // Simpan ke SessionManager lokal
+                    sessionManager.setLoggedIn(true)
+                    sessionManager.saveEmail(emailInput)
+                    sessionManager.saveUserName(userName)
+                    sessionManager.saveUserId(user?.id ?: "")
+
+                    findNavController().navigate(R.id.action_loginFragment_to_navigation_home)
+
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Login gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                    btnLogin.isEnabled = true
+                }
             }
         }
 
