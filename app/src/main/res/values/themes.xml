@@ -15,7 +15,7 @@
     </style>
 
     <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">@color/status_green</item>
+        <item name="android:color">@color/light_blue</item>
         <item name="android:width">52dp</item>
         <item name="android:height">44dp</item>
         <item name="shapeAppearance">@style/NavIndicatorShape</item>
@@ -28,11 +28,11 @@
     <style name="NavTextActive">
         <item name="android:textSize">11sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/status_green</item>
+        <item name="android:textColor">@color/primary_blue</item>
     </style>
 
     <style name="NavTextInactive">
         <item name="android:textSize">11sp</item>
-        <item name="android:textColor">@color/gray_text</item>
+        <item name="android:textColor">#505050</item>
     </style>
 </resources>
