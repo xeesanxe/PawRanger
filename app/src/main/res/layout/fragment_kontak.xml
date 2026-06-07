@@ -44,4 +44,16 @@
         app:layout_constraintTop_toBottomOf="@id/btn_add_contact_top"
         tools:listitem="@layout/item_contact" />
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_emergency"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_dialog_alert"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@color/white"
+        app:backgroundTint="@color/panic_red"
+        android:contentDescription="Darurat" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

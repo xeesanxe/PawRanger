@@ -31,6 +31,7 @@
             android:paddingHorizontal="16dp">
 
             <TextView
+                android:id="@+id/tv_halo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/app_name"
@@ -219,11 +220,20 @@
 
         <!-- Outer Ring -->
         <View
+            android:id="@+id/sos_pulse_1"
             android:layout_width="160dp"
             android:layout_height="160dp"
             android:layout_gravity="center"
             android:background="@drawable/bg_sos_glow"
             android:backgroundTint="#40D32F2F" />
+
+        <View
+            android:id="@+id/sos_pulse_2"
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_sos_glow"
+            android:backgroundTint="#20D32F2F" />
 
         <!-- Inner Red Button -->
         <com.google.android.material.card.MaterialCardView

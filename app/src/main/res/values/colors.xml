@@ -11,6 +11,7 @@
     <color name="input_bg">#F2F4F2</color>
     <color name="primary_blue">#1E2066</color>
     <color name="accent_blue">#2D325A</color>
+    <color name="light_blue">#D6E4FF</color>
 
     <!-- UI Accent Colors -->
     <color name="panic_red">#D32F2F</color>

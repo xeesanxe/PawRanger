@@ -5,7 +5,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Contact(
+    @SerialName("name") // Sesuai kolom di Supabase Anda
     val name: String,
-    @SerialName("phoneNumber") // Disamakan dengan nama kolom di Screenshot Supabase Anda
-    val phoneNumber: String
+    
+    @SerialName("phoneNumber") // Sesuai kolom di Supabase Anda
+    val phoneNumber: String,
+    
+    @SerialName("owner_phone") // Kolom baru yang Anda tambahkan
+    val ownerPhone: String = ""
 )
