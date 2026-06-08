@@ -14,6 +14,19 @@
     <string name="footer_no_account">Belum punya akun? Daftar Sekarang</string>
     <string name="link_terms">Syarat &amp; Ketentuan</string>
     <string name="link_privacy">Kebijakan Privasi</string>
+    <string name="login_title">Masuk</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Kata Sandi</string>
+    <string name="btn_login_label">MASUK</string>
+    <string name="footer_login">Belum punya akun? Daftar</string>
+    <string name="register_subtitle">Daftar untuk memulai</string>
+    <string name="hint_name">Nama Lengkap</string>
+    <string name="label_gender">Jenis Kelamin</string>
+    <string name="gender_male">Laki-laki</string>
+    <string name="gender_female">Perempuan</string>
+    <string name="hint_confirm_password">Konfirmasi Kata Sandi</string>
+    <string name="btn_register_label">DAFTAR</string>
+    <string name="footer_register">Sudah punya akun? Masuk</string>
 
     <!-- Register -->
     <string name="register_title_new">Buat Akun Baru</string>

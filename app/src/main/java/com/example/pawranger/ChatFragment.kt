@@ -1,4 +1,4 @@
-package com.example.pawranger.ui
+package com.example.pawranger
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,9 +9,8 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.pawranger.R
 import com.example.pawranger.data.Chat
-import com.example.pawranger.ui.adapter.ChatAdapter
+import com.example.pawranger.adapter.ChatAdapter
 
 class ChatFragment : Fragment() {
 
@@ -38,10 +37,6 @@ class ChatFragment : Fragment() {
         rvChat.adapter = ChatAdapter(chatList) { chat ->
             val bundle = bundleOf("senderName" to chat.senderName)
             findNavController().navigate(R.id.action_navigation_chat_to_chatDetailFragment, bundle)
-        }
-
-        view.findViewById<View>(R.id.iv_profile_top)?.setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
         }
     }
 }

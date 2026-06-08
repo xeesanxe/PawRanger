@@ -1,26 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="panic_red">#D32F2F</color>
+    <!-- Adaptive Colors (Change with theme) -->
+    <color name="black">#FF000000</color> <!-- Becomes White in Dark -->
+    <color name="white">#FFFFFFFF</color> <!-- Becomes Dark in Dark -->
+    <color name="bg_light">#F7F8F7</color> <!-- Becomes Black in Dark -->
+    <color name="card_surface">#FFFFFF</color> <!-- Becomes Dark Gray in Dark -->
     <color name="gray_text">#757575</color>
-    <color name="bg_light">#F7F8FA</color>
-    <color name="input_bg">#F2F4F7</color>
+    <color name="primary_dark">#435334</color>
+    <color name="title_green">#1B2E0B</color>
+    <color name="input_bg">#F2F4F2</color>
+    <color name="primary_blue">#1E2066</color>
+    <color name="accent_blue">#2D325A</color>
+    <color name="light_blue">#D6E4FF</color>
 
-    <!-- Navigation Theme -->
-    <color name="nav_selected_bg">#1E2066</color>
-    <color name="nav_active_item">#A1A6FF</color>
-    <color name="nav_inactive_item">#505050</color>
+    <!-- UI Accent Colors -->
+    <color name="panic_red">#D32F2F</color>
+    <color name="status_green">#A2D94A</color>
+    <color name="button_text">#435334</color>
 
-    <!-- Apple Maps Style Theme -->
-    <color name="primary_blue">#0A84FF</color>
-    <color name="dark_navy">#1C2229</color>
-    <color name="card_navy">#252B33</color>
-    <color name="accent_blue">#64D2FF</color>
-    <color name="light_blue">#D1F2FF</color>
-
-    <!-- Legacy names mapping -->
-    <color name="status_green">@color/accent_blue</color>
-    <color name="primary_dark">@color/dark_navy</color>
-    <color name="title_green">@color/primary_blue</color>
+    <!-- Permanent Colors (Stay the same) -->
+    <color name="permanent_black">#000000</color>
+    <color name="permanent_white">#FFFFFF</color>
 </resources>

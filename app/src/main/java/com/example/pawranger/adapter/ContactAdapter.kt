@@ -1,4 +1,4 @@
-package com.example.pawranger.ui.adapter
+package com.example.pawranger.adapter
 
 import android.view.LayoutInflater
 import android.view.View

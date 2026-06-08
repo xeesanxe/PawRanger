@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/splashFragment"
-        android:name="com.example.pawranger.ui.SplashFragment"
+        android:name="com.example.pawranger.SplashFragment"
         android:label="Splash"
         tools:layout="@layout/fragment_splash">
         <action
@@ -23,7 +23,7 @@
 
     <fragment
         android:id="@+id/loginFragment"
-        android:name="com.example.pawranger.ui.LoginFragment"
+        android:name="com.example.pawranger.LoginFragment"
         android:label="Login"
         tools:layout="@layout/fragment_login">
         <action
@@ -46,7 +46,7 @@
 
     <fragment
         android:id="@+id/registerFragment"
-        android:name="com.example.pawranger.ui.RegisterFragment"
+        android:name="com.example.pawranger.RegisterFragment"
         android:label="Register"
         tools:layout="@layout/fragment_register">
         <action
@@ -71,7 +71,7 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.example.pawranger.ui.HomeFragment"
+        android:name="com.example.pawranger.HomeFragment"
         android:label="Home"
         tools:layout="@layout/fragment_home">
         <action
@@ -85,7 +85,7 @@
 
     <fragment
         android:id="@+id/navigation_chat"
-        android:name="com.example.pawranger.ui.ChatFragment"
+        android:name="com.example.pawranger.ChatFragment"
         android:label="Chat" >
         <action
             android:id="@+id/action_navigation_chat_to_chatDetailFragment"
@@ -98,17 +98,17 @@
 
     <fragment
         android:id="@+id/navigation_kontak"
-        android:name="com.example.pawranger.ui.KontakFragment"
+        android:name="com.example.pawranger.KontakFragment"
         android:label="Kontak" />
 
     <fragment
         android:id="@+id/navigation_history"
-        android:name="com.example.pawranger.ui.HistoryFragment"
+        android:name="com.example.pawranger.HistoryFragment"
         android:label="History" />
 
     <fragment
         android:id="@+id/chatDetailFragment"
-        android:name="com.example.pawranger.ui.ChatDetailFragment"
+        android:name="com.example.pawranger.ChatDetailFragment"
         android:label="Chat Detail"
         tools:layout="@layout/fragment_chat_detail">
         <argument
@@ -118,7 +118,7 @@
 
     <fragment
         android:id="@+id/navigation_profile"
-        android:name="com.example.pawranger.ui.ProfileFragment"
+        android:name="com.example.pawranger.ProfileFragment"
         android:label="Profile"
         tools:layout="@layout/fragment_profile" />
 

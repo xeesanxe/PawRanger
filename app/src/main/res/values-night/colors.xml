@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Adaptive Colors for Dark Mode -->
+    <color name="black">#EEEEEE</color> <!-- Teks Utama (Light) -->
+    <color name="white">#121212</color> <!-- Latar Utama (Dark) -->
+    <color name="bg_light">#121212</color> <!-- Background App -->
+    <color name="card_surface">#1E1E1E</color> <!-- Card Background -->
+    <color name="gray_text">#B0B0B0</color>
+    <color name="primary_dark">#B9F6CA</color> <!-- Brighter Primary derivative -->
+    <color name="title_green">#E8F5E9</color>
+    <color name="input_bg">#2C2C2C</color>
+
+    <!-- UI Accent Colors -->
+    <color name="panic_red">#FF5252</color>
+    <color name="status_green">#B9F6CA</color>
+    <color name="button_text">#1B300F</color>
+
+    <!-- Permanent Colors (Stay the same) -->
+    <color name="permanent_black">#000000</color>
+    <color name="permanent_white">#FFFFFF</color>
+</resources>
