@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -64,6 +65,12 @@ dependencies {
     implementation(libs.ktor.client.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.browser)
+
+    // Import Firebase BoM (Bill of Materials) agar versinya selalu sinkron
+    implementation(platform("com.google.firebase:firebase-bom:32.8.0"))
+
+    // Import Firebase Cloud Messaging untuk urusan notifikasi
+    implementation("com.google.firebase:firebase-messaging")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
