@@ -19,6 +19,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import android.util.Log
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private val sosRepository = SOSRepository()
@@ -92,6 +97,39 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+            }
+        }
+        // Ambil token FCM unik dari HP ini
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM_TOKEN", "Gagal mengambil token FCM baru", task.exception)
+                return@addOnCompleteListener
+            }
+
+            // Ini token unik HP lu yang berhasil ditangkap!
+            val token = task.result
+            Log.d("FCM_TOKEN", "Token FCM HP ini: $token")
+
+            // PANGGIL FUNGSI UPDATE KE SUPABASE DI SINI
+            updateFcmTokenToSupabase(token)
+        }
+    }
+
+    private fun updateFcmTokenToSupabase(token: String) {
+        val currentUserId = "ambil_id_user_yang_lagi_login_di_sini" // Misal dari Supabase Auth atau Session
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // Contoh logic update kolom fcm_token milik user yang sedang aktif
+                // Silakan sesuaikan dengan sintaks library Supabase Postgrest yang kalian pakai
+                /* supabase.from("users")
+                    .update(mapOf("fcm_token" to token))
+                    .eq("id", currentUserId)
+                    .execute()
+                */
+                Log.d("SUPABASE_FCM", "Token FCM berhasil dikirim dan disimpan di Supabase!")
+            } catch (e: Exception) {
+                Log.e("SUPABASE_FCM", "Gagal nyimpen token ke Supabase: ${e.message}")
             }
         }
     }

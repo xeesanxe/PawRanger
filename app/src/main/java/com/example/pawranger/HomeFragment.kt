@@ -4,40 +4,38 @@ import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.utils.SessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
-
-import android.location.Geocoder
-import android.os.Looper
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.Priority
 import java.util.Locale
-import androidx.lifecycle.lifecycleScope
-import com.example.pawranger.data.EmergencyAlert
-import com.example.pawranger.data.SOSRepository
-import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment(), OnMapReadyCallback {
 
@@ -48,6 +46,9 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private lateinit var locationCallback: LocationCallback
     private var tvCurrentAddress: TextView? = null
     private val sosRepository = SOSRepository()
+
+    // Variabel "saklar" untuk nyalain/matiin Foreground Service SOS
+    private var isSosActive = false
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -65,15 +66,15 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
         sessionManager = SessionManager(requireContext())
-        
+
         mapView = view.findViewById(R.id.map_view)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
-        
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-        
+
         setupLocationCallback()
-        
+
         return view
     }
 
@@ -81,9 +82,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
-                    // Update TextView Alamat
                     getAddress(location.latitude, location.longitude)
-                    // (Opsional) Gerakkan kamera mengikuti user jika baru pertama kali atau sedang mode tracking
                 }
             }
         }
@@ -94,16 +93,17 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
         val tvHalo = view.findViewById<TextView>(R.id.tv_halo)
         val ivProfile = view.findViewById<ImageView>(R.id.iv_profile_top)
-
         tvCurrentAddress = view.findViewById(R.id.tv_current_address)
+
         tvHalo.text = "Halo, ${sessionManager.getUserName()}"
 
         sessionManager.getProfileImage()?.let { uriString ->
             ivProfile.setImageURI(Uri.parse(uriString))
         }
 
+        // Logic Tombol SOS: Tekan lama untuk Nyala / Mati
         view.findViewById<View>(R.id.cv_sos).setOnLongClickListener {
-            sendEmergencySOS()
+            toggleSosMode()
             true
         }
 
@@ -129,6 +129,24 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         startPulseAnimation(view.findViewById(R.id.sos_pulse_2), 1.2f)
     }
 
+    // --- FUNGSI MENGONTROL FOREGROUND SERVICE ---
+    private fun toggleSosMode() {
+        if (isSosActive) {
+            isSosActive = false
+            // Matikan Service
+            val intent = Intent(requireContext(), SosService::class.java).apply { action = "STOP" }
+            requireContext().stopService(intent)
+            Toast.makeText(context, "Sinyal SOS Dimatikan. Kondisi Aman.", Toast.LENGTH_SHORT).show()
+        } else {
+            isSosActive = true
+            // Jalankan Service Kebal Android
+            val intent = Intent(requireContext(), SosService::class.java).apply { action = "START" }
+            ContextCompat.startForegroundService(requireContext(), intent)
+            Toast.makeText(context, "SOS AKTIF! Lokasi dikirim tiap 2 menit.", Toast.LENGTH_LONG).show()
+        }
+    }
+    // --- AKHIR FUNGSI KONTROL SERVICE ---
+
     private fun startPulseAnimation(view: View?, scale: Float) {
         if (view == null) return
         val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, scale)
@@ -140,58 +158,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.RESTART
             start()
-        }
-    }
-
-    private fun sendEmergencySOS() {
-        val rawPhone = sessionManager.getUserPhone() ?: ""
-        // Hanya ambil angka saja
-        val myPhone = rawPhone.replace(Regex("[^0-9]"), "")
-        
-        Toast.makeText(context, "ID Saya: $myPhone", Toast.LENGTH_SHORT).show()
-        
-        lifecycleScope.launch {
-            try {
-                // 1. Ambil kontak darurat
-                val contacts = sosRepository.getEmergencyContacts(myPhone)
-                
-                if (contacts.isEmpty()) {
-                    Toast.makeText(context, "Anda belum memiliki kontak darurat!", Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
-
-                // 2. Ambil lokasi terakhir
-                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                        if (location != null) {
-                            lifecycleScope.launch {
-                                var successCount = 0
-                                contacts.forEach { contact ->
-                                    val alert = EmergencyAlert(
-                                        sender_phone = myPhone,
-                                        receiver_phone = contact.phoneNumber,
-                                        latitude = location.latitude,
-                                        longitude = location.longitude
-                                    )
-                                    try {
-                                        sosRepository.sendSOS(alert)
-                                        successCount++
-                                    } catch (e: Exception) {
-                                        Log.e("SOS_ERROR", "Gagal kirim ke ${contact.phoneNumber}: ${e.message}")
-                                    }
-                                }
-                                Toast.makeText(context, "Berhasil! SOS Terkirim ke $successCount kontak.", Toast.LENGTH_LONG).show()
-                            }
-                        } else {
-                            Toast.makeText(context, "GPS belum mengunci lokasi. Coba buka Google Maps dulu sebentar.", Toast.LENGTH_LONG).show()
-                        }
-                    }.addOnFailureListener {
-                        Toast.makeText(context, "Gagal akses GPS: ${it.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 
@@ -243,8 +209,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         ) {
             try {
                 googleMap?.isMyLocationEnabled = true
-                googleMap?.uiSettings?.isMyLocationButtonEnabled = false // Sembunyikan button default Google
-                
+                googleMap?.uiSettings?.isMyLocationButtonEnabled = false
+
                 val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
                     .setMinUpdateIntervalMillis(2000)
                     .build()
