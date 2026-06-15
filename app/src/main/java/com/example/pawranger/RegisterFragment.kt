@@ -1,6 +1,7 @@
 package com.example.pawranger
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,10 +12,17 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.utils.SessionManager
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class RegisterFragment : Fragment() {
     private lateinit var sessionManager: SessionManager
+    private val sosRepository = SOSRepository()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         sessionManager = SessionManager(requireContext())
@@ -26,23 +34,50 @@ class RegisterFragment : Fragment() {
 
         val etName = view.findViewById<EditText>(R.id.et_name)
         val etPhone = view.findViewById<EditText>(R.id.et_phone)
-        val etEmail = view.findViewById<EditText>(R.id.et_register_email)
+        val etPassword = view.findViewById<EditText>(R.id.et_register_password)
         val btnRegister = view.findViewById<Button>(R.id.btn_register)
 
         btnRegister.setOnClickListener {
-            val name = etName.text.toString()
-            val phone = etPhone.text.toString()
-            val email = etEmail.text.toString()
+            val name = etName.text.toString().trim()
+            val rawPhone = etPhone.text.toString().trim()
+            val password = etPassword?.text?.toString()?.trim() ?: ""
 
-            if (name.isNotEmpty() && phone.isNotEmpty() && email.isNotEmpty()) {
+            if (name.isNotEmpty() && rawPhone.isNotEmpty()) {
+
+                // Format nomor HP biar seragam jadi awalan 08...
+                val cleanPhone = formatPhoneNumber(rawPhone)
+
+                // Simpan di memori lokal (HP)
                 sessionManager.saveUserName(name)
-                sessionManager.saveUserPhone(phone)
-                sessionManager.saveUserEmail(email)
+                sessionManager.saveUserPhone(cleanPhone)
                 sessionManager.setLoggedIn(true)
-                Toast.makeText(context, "Registrasi Berhasil!", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.action_registerFragment_to_navigation_home)
+
+                // Ambil Token Firebase & Kirim ke Supabase
+                FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                    if (!task.isSuccessful) {
+                        Log.w("FCM", "Gagal ambil token Firebase", task.exception)
+                        return@addOnCompleteListener
+                    }
+
+                    val fcmToken = task.result
+
+                    // Jalankan fungsi kirim ke internet (Supabase) di background
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            sosRepository.saveUserProfile(name, cleanPhone, fcmToken)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Registrasi & Sinkronisasi Berhasil!", Toast.LENGTH_SHORT).show()
+                                findNavController().navigate(R.id.action_registerFragment_to_navigation_home)
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Gagal simpan ke server: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
             } else {
-                Toast.makeText(context, "Harap lengkapi semua data", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Harap lengkapi Nama dan Nomor Telepon", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -52,6 +87,17 @@ class RegisterFragment : Fragment() {
 
         view.findViewById<TextView>(R.id.tv_login_footer).setOnClickListener {
             findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
+        }
+    }
+
+    // Fungsi penyaring nomor
+    private fun formatPhoneNumber(phone: String?): String {
+        if (phone.isNullOrEmpty()) return ""
+        val numOnly = phone.replace(Regex("[^0-9+]"), "")
+        return when {
+            numOnly.startsWith("+62") -> "0" + numOnly.substring(3)
+            numOnly.startsWith("62") -> "0" + numOnly.substring(2)
+            else -> numOnly
         }
     }
 }

@@ -57,7 +57,6 @@ class SosService : Service() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // PERBAIKAN IKON DI SINI
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("PawRanger SOS AKTIF")
             .setContentText("Aplikasi sedang mengirimkan lokasi Anda berkala...")
@@ -65,7 +64,6 @@ class SosService : Service() {
             .setOngoing(true)
             .build()
 
-        // PERBAIKAN START FOREGROUND DI SINI BIAR SUPPORT ANDROID TERBARU
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(1001, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } else {
@@ -78,7 +76,7 @@ class SosService : Service() {
         sosJob = serviceScope.launch {
             while (isActive) {
                 fetchAndSendLocation()
-                delay(120_000) // Tetap 2 menit beneran (ubah 10_000 kalau mau testing)
+                delay(120_000) // ubah 10_000 kalau mau testing
             }
         }
     }
@@ -89,8 +87,12 @@ class SosService : Service() {
 
     @SuppressLint("MissingPermission")
     private fun fetchAndSendLocation() {
+        // Ambil nomor pengirim dari sesi
         val rawPhone = sessionManager.getUserPhone() ?: ""
-        val myPhone = rawPhone.replace(Regex("[^0-9]"), "")
+
+        // BERSILAT LIDAH 1: Bersihkan nomor pengirim pakai fungsi formatter biar pasti 08
+        val myPhone = formatPhoneNumber(rawPhone.replace(Regex("[^0-9+]"), ""))
+
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
@@ -99,14 +101,18 @@ class SosService : Service() {
                     try {
                         val contacts = sosRepository.getEmergencyContacts(myPhone)
                         contacts.forEach { contact ->
+
+                            // BERSILAT LIDAH 2: Bersihkan nomor penerima sebelum masuk payload
+                            val cleanReceiverPhone = formatPhoneNumber(contact.phoneNumber)
+
                             val alert = EmergencyAlert(
                                 sender_phone = myPhone,
-                                receiver_phone = contact.phoneNumber,
+                                receiver_phone = cleanReceiverPhone, // Menggunakan nomor yang sudah bersih
                                 latitude = location.latitude,
                                 longitude = location.longitude
                             )
+
                             sosRepository.sendSOS(alert)
-                            // TODO: Nanti pemicu Firebase Notifikasi ditaruh di sini juga!
                         }
                         Log.d("SOS_SYSTEM", "Lokasi berhasil dikirim via Service!")
                     } catch (e: Exception) {
@@ -120,5 +126,15 @@ class SosService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
+    }
+}
+
+// Fungsi penyaring ditaruh di luar class agar bisa diakses mudah
+fun formatPhoneNumber(phone: String?): String {
+    if (phone.isNullOrEmpty()) return ""
+    return when {
+        phone.startsWith("+62") -> "0" + phone.substring(3)
+        phone.startsWith("62") -> "0" + phone.substring(2)
+        else -> phone
     }
 }
