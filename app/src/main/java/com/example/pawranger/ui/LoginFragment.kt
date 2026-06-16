@@ -9,11 +9,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.R
-import com.example.pawranger.data.SupabaseConfig
+import com.example.pawranger.firebase.FirebaseAuthManager
 import com.example.pawranger.utils.SessionManager
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class LoginFragment : Fragment() {
     private lateinit var sessionManager: SessionManager
@@ -43,21 +43,32 @@ class LoginFragment : Fragment() {
 
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    // Login ke Supabase Auth
-                    SupabaseConfig.client!!.auth.signInWith(Email) {
-                        this.email = emailInput
-                        this.password = password
+                    // 1. Login ke Firebase Auth
+                    val result = FirebaseAuthManager.auth
+                        .signInWithEmailAndPassword(emailInput, password)
+                        .await()
+
+                    val userId = result.user?.uid
+
+                    // 2. Ambil data tambahan (nama) dari Firestore
+                    var userName = emailInput.substringBefore("@")
+                    if (userId != null) {
+                        val doc = FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(userId)
+                            .get()
+                            .await()
+                        val nameFromDb = doc.getString("name")
+                        if (!nameFromDb.isNullOrEmpty()) {
+                            userName = nameFromDb
+                        }
                     }
 
-                    // Ambil data user dari Supabase
-                    val user = SupabaseConfig.client!!.auth.currentUserOrNull()
-                    val userName = emailInput.substringBefore("@")
-
-                    // Simpan ke SessionManager lokal
+                    // 3. Simpan ke SessionManager lokal
                     sessionManager.setLoggedIn(true)
                     sessionManager.saveEmail(emailInput)
                     sessionManager.saveUserName(userName)
-                    sessionManager.saveUserId(user?.id ?: "")
+                    sessionManager.saveUserId(userId ?: "")
 
                     findNavController().navigate(R.id.action_loginFragment_to_navigation_home)
 

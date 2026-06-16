@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1060949738832",
+    "project_id": "pawranger-a357b",
+    "storage_bucket": "pawranger-a357b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1060949738832:android:483ad4b9fcf7f60979d855",
+        "android_client_info": {
+          "package_name": "com.example.pawranger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCA9QxVqFM35Gxlgt-MZ7JKg7ghoTfUhfo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

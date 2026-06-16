@@ -1,48 +1,61 @@
 package com.example.pawranger.data
 
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 class EmergencyRepository {
 
-    private val client = SupabaseConfig.client
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    suspend fun getEmergencyContacts(): List<EmergencyContact> =
-        withContext(Dispatchers.IO) {
+    suspend fun getEmergencyContacts(): List<EmergencyContact> {
+        val userId = auth.currentUser?.uid ?: return emptyList()
 
-            client!!.postgrest
-                .from("emergency_contacts")
-                .select()
-                .decodeList<EmergencyContact>()
+        val snapshot = db.collection("emergency_contacts")
+            .whereEqualTo("userId", userId)
+            .get()
+            .await()
+
+        return snapshot.documents.map { doc ->
+            EmergencyContact(
+                id = null,
+                userId = doc.getString("userId"),
+                contactName = doc.getString("contactName") ?: "",
+                phoneNumber = doc.getString("phoneNumber") ?: "",
+                relationship = doc.getString("relationship"),
+                createdAt = doc.getString("createdAt")
+            )
         }
-
-    suspend fun insertEmergencyContact(
-        emergencyContact: EmergencyContact
-    ): Unit = withContext(Dispatchers.IO) {
-
-        val userId =
-            client!!.auth.currentSessionOrNull()?.user?.id
-
-        val contactWithUser =
-            emergencyContact.copy(userId = userId)
-
-        client.postgrest
-            .from("emergency_contacts")
-            .insert(contactWithUser)
     }
 
-    suspend fun deleteEmergencyContact(
-        phoneNumber: String
-    ): Unit = withContext(Dispatchers.IO) {
+    suspend fun insertEmergencyContact(emergencyContact: EmergencyContact) {
+        val userId = auth.currentUser?.uid
 
-        client!!.postgrest
-            .from("emergency_contacts")
-            .delete {
-                filter {
-                    eq("phone_number", phoneNumber)
-                }
-            }
+        val data = hashMapOf(
+            "userId" to userId,
+            "contactName" to emergencyContact.contactName,
+            "phoneNumber" to emergencyContact.phoneNumber,
+            "relationship" to emergencyContact.relationship,
+            "createdAt" to System.currentTimeMillis().toString()
+        )
+
+        db.collection("emergency_contacts")
+            .add(data)
+            .await()
+    }
+
+    suspend fun deleteEmergencyContact(phoneNumber: String) {
+        val userId = auth.currentUser?.uid ?: return
+
+        val snapshot = db.collection("emergency_contacts")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("phoneNumber", phoneNumber)
+            .get()
+            .await()
+
+        for (doc in snapshot.documents) {
+            doc.reference.delete().await()
+        }
     }
 }

@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -17,7 +19,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        // 2 baris ini untuk baca API Key dari local.properties
         val mapsApiKey = project.findProperty("MAPS_API_KEY") as? String ?: ""
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
@@ -44,15 +45,14 @@ dependencies {
     // Material Design 3
     implementation(libs.material)
 
-    // Supabase (versi dikontrol dari BOM)
-    implementation(platform(libs.supabase.bom))
-    implementation(libs.supabase.postgrest)
-    implementation(libs.supabase.auth)
-    implementation(libs.supabase.realtime)
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
-    // Ktor engine - versi 3.x sesuai Supabase 3.x
-    implementation(libs.ktor.client.android)
-    implementation(libs.ktor.client.core)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     // Navigation
     implementation(libs.androidx.navigation.fragment.ktx)
@@ -68,10 +68,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
-}
-
-configurations.all {
-    resolutionStrategy {
-        force("androidx.browser:browser:1.8.0")
-    }
 }

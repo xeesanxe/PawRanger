@@ -1,14 +1,20 @@
 package com.example.pawranger.ui
 
+import android.Manifest
 import android.animation.ValueAnimator
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.R
+import com.example.pawranger.data.EmergencyAlertRepository
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -16,7 +22,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
-
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment(), OnMapReadyCallback {
 
@@ -28,19 +34,48 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
-        
+
         mapView = view.findViewById(R.id.map_view)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
-        
+
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        val alertRepository = EmergencyAlertRepository()
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+
         view.findViewById<View>(R.id.cv_sos).setOnLongClickListener {
-            Toast.makeText(context, "SOS DARURAT DIKIRIM!", Toast.LENGTH_LONG).show()
+            if (ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Toast.makeText(context, "Izin lokasi belum diberikan", Toast.LENGTH_SHORT).show()
+                return@setOnLongClickListener true
+            }
+
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location == null) {
+                    Toast.makeText(context, "Lokasi tidak ditemukan, coba lagi", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val berhasil = alertRepository.sendAlert(
+                        latitude = location.latitude,
+                        longitude = location.longitude
+                    )
+                    if (berhasil) {
+                        Toast.makeText(context, "🆘 SOS TERKIRIM!", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(context, "Gagal kirim SOS, coba lagi", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
             true
         }
 
@@ -48,7 +83,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
         }
 
-        // Add some basic interaction for FABs
         view.findViewById<View>(R.id.fab_my_location)?.setOnClickListener {
             val sudirman = LatLng(-6.2248, 106.8073)
             googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(sudirman, 17f))
@@ -65,7 +99,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        
+
         try {
             googleMap?.setMapStyle(
                 MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.map_style_dark)
@@ -75,10 +109,10 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
         val defaultLocation = LatLng(-6.2248, 106.8073)
         googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 16f))
-        
+
         googleMap?.uiSettings?.isMyLocationButtonEnabled = false
         googleMap?.uiSettings?.isMapToolbarEnabled = false
-        
+
         googleMap?.addMarker(MarkerOptions().position(defaultLocation).title("Lokasi Saya"))
     }
 

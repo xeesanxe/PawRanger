@@ -5,15 +5,7 @@
         android:icon="@drawable/ic_home_nav"
         android:title="@string/menu_home" />
     <item
-        android:id="@+id/navigation_chat"
-        android:icon="@drawable/ic_chat_nav"
-        android:title="@string/menu_chat" />
-    <item
         android:id="@+id/navigation_kontak"
         android:icon="@drawable/ic_contacts_nav"
         android:title="@string/menu_kontak" />
-    <item
-        android:id="@+id/navigation_history"
-        android:icon="@drawable/ic_history_nav"
-        android:title="@string/menu_riwayat" />
 </menu>

@@ -10,12 +10,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.R
-import com.example.pawranger.data.SupabaseConfig
+import com.example.pawranger.firebase.FirebaseAuthManager
 import com.example.pawranger.utils.SessionManager
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
-import io.github.jan.supabase.postgrest.postgrest
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class RegisterFragment : Fragment() {
     private lateinit var sessionManager: SessionManager
@@ -28,12 +27,12 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val etName     = view.findViewById<EditText>(R.id.et_name)
-        val etEmail    = view.findViewById<EditText>(R.id.et_register_email)
-        val etPhone    = view.findViewById<EditText>(R.id.et_phone)
-        val etPassword = view.findViewById<EditText>(R.id.et_register_password)
+        val etName      = view.findViewById<EditText>(R.id.et_name)
+        val etEmail     = view.findViewById<EditText>(R.id.et_register_email)
+        val etPhone     = view.findViewById<EditText>(R.id.et_phone)
+        val etPassword  = view.findViewById<EditText>(R.id.et_register_password)
         val btnRegister = view.findViewById<Button>(R.id.btn_register)
-        val cbTerms    = view.findViewById<CheckBox>(R.id.cb_terms)
+        val cbTerms     = view.findViewById<CheckBox>(R.id.cb_terms)
 
         cbTerms.text = HtmlCompat.fromHtml(
             getString(R.string.terms_agreement_html),
@@ -43,7 +42,7 @@ class RegisterFragment : Fragment() {
         btnRegister.setOnClickListener {
             val name       = etName.text.toString().trim()
             val emailInput = etEmail.text.toString().trim()
-            val phone      = etPhone?.text.toString().trim()
+            val phone      = etPhone.text.toString().trim()
             val password   = etPassword.text.toString().trim()
 
             if (name.isEmpty() || emailInput.isEmpty() || password.isEmpty()) {
@@ -60,24 +59,28 @@ class RegisterFragment : Fragment() {
 
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    // 1. Daftar ke Supabase Auth
-                    SupabaseConfig.client!!.auth.signUpWith(Email) {
-                        this.email = emailInput
-                        this.password = password
-                    }
+                    // 1. Daftar ke Firebase Auth
+                    val result = FirebaseAuthManager.auth
+                        .createUserWithEmailAndPassword(emailInput, password)
+                        .await()
 
-                    // 2. Ambil user_id yang baru dibuat
-                    val userId = SupabaseConfig.client!!.auth.currentUserOrNull()?.id
+                    val userId = result.user?.uid
 
-                    // 3. Update nama & no_telp ke tabel profiles
+                    // 2. Simpan data tambahan (nama, telepon) ke Firestore
                     if (userId != null) {
-                        SupabaseConfig.client!!.postgrest.from("profiles")
-                            .update(mapOf("nama" to name, "no_telp" to phone)) {
-                                filter { eq("user_id", userId) }
-                            }
+                        val userData = hashMapOf(
+                            "name" to name,
+                            "email" to emailInput,
+                            "phone" to phone
+                        )
+                        FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(userId)
+                            .set(userData)
+                            .await()
                     }
 
-                    // 4. Simpan ke SessionManager lokal
+                    // 3. Simpan ke SessionManager lokal
                     sessionManager.setLoggedIn(true)
                     sessionManager.saveUserName(name)
                     sessionManager.saveEmail(emailInput)

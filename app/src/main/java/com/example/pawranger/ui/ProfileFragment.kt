@@ -11,23 +11,12 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.R
-import com.example.pawranger.data.SupabaseConfig
 import com.example.pawranger.utils.SessionManager
 import com.google.android.material.card.MaterialCardView
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Columns
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-
-@Serializable
-data class ProfileData(
-    val id: Long = 0,
-    val nama: String? = null,
-    val no_telp: String? = null,
-    val status_sos: Boolean? = null,
-    val alamat: String? = null
-)
+import kotlinx.coroutines.tasks.await
 
 class ProfileFragment : Fragment() {
     private lateinit var sessionManager: SessionManager
@@ -47,7 +36,7 @@ class ProfileFragment : Fragment() {
         view.findViewById<MaterialCardView>(R.id.btn_logout).setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    SupabaseConfig.client!!.auth.signOut()
+                    FirebaseAuth.getInstance().signOut()
                 } catch (e: Exception) {
                     // ignore
                 }
@@ -60,46 +49,38 @@ class ProfileFragment : Fragment() {
             // Aksi edit nama (bisa ditambahkan dialog nanti)
         }
 
-        // Load profil dari Supabase
         loadProfile(view)
     }
 
     private fun loadProfile(view: View) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val client = SupabaseConfig.client!!
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
 
-                // Ambil user yang sedang login
-                val user = client.auth.currentUserOrNull()
+                if (userId != null) {
+                    val doc = FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(userId)
+                        .get()
+                        .await()
 
-                if (user != null) {
-                    // Ambil data profil dari tabel profiles berdasarkan user id
-                    val profiles = client.postgrest.from("profiles")
-                        .select(Columns.ALL) {
-                            filter {
-                                eq("user_id", user.id)
-                            }
-                        }
-                        .decodeList<ProfileData>()
-
-                    if (profiles.isNotEmpty()) {
-                        val profile = profiles.first()
-                        val nama = profile.nama ?: sessionManager.getUserName() ?: "User"
-                        val noTelp = profile.no_telp ?: "-"
-                        val alamat = profile.alamat ?: "-"   // ← tambah di sini
+                    if (doc.exists()) {
+                        val nama = doc.getString("name") ?: sessionManager.getUserName() ?: "User"
+                        val noTelp = doc.getString("phone") ?: "-"
+                        val alamat = doc.getString("alamat") ?: "-"
 
                         view.findViewById<TextView>(R.id.tv_profile_name_header).text = nama
                         view.findViewById<TextView>(R.id.tv_profile_name).text = nama
                         view.findViewById<TextView>(R.id.tv_profile_phone)?.text = noTelp
-                        view.findViewById<TextView>(R.id.tv_profile_address)?.text = alamat  // ← tambah di sini
+                        view.findViewById<TextView>(R.id.tv_profile_address)?.text = alamat
                     } else {
-                        // Profil belum ada di Supabase, tampilkan dari session lokal
+                        // Dokumen belum ada, pakai data lokal
                         val userName = sessionManager.getUserName() ?: "User"
                         view.findViewById<TextView>(R.id.tv_profile_name_header).text = userName
                         view.findViewById<TextView>(R.id.tv_profile_name).text = userName
                     }
                 } else {
-                    // Tidak ada session, pakai data lokal
+                    // Tidak ada user login, pakai data lokal
                     val userName = sessionManager.getUserName() ?: "User"
                     view.findViewById<TextView>(R.id.tv_profile_name_header).text = userName
                     view.findViewById<TextView>(R.id.tv_profile_name).text = userName
