@@ -1,38 +1,38 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.PawRanger" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.PawRanger" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary_blue</item>
+        <item name="android:windowBackground">@color/bg_light</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
         <item name="bottomNavigationStyle">@style/CustomBottomNav</item>
     </style>
 
     <style name="CustomBottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">@android:color/transparent</item>
         <item name="itemActiveIndicatorStyle">@style/App.Custom.Indicator</item>
+        <item name="itemIconTint">@color/nav_item_color_selector</item>
+        <item name="itemTextColor">@color/nav_item_color_selector</item>
     </style>
 
     <style name="Theme.PawRanger" parent="Base.Theme.PawRanger" />
 
-    <style name="CircleShape">
-        <item name="cornerSize">50%</item>
-    </style>
-
     <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">#E3F2FD</item>
-        <item name="android:width">60dp</item>
-        <item name="android:height">32dp</item>
-        <item name="shapeAppearance">@style/NavIndicatorShape</item>
+        <item name="android:color">@android:color/transparent</item>
     </style>
 
-    <style name="NavIndicatorShape">
-        <item name="cornerSize">12dp</item>
-    </style>
-
-    <style name="NavTextActive">
-        <item name="android:textSize">11sp</item>
+    <style name="NavTextActive" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">12sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/primary_blue</item>
     </style>
 
-    <style name="NavTextInactive">
-        <item name="android:textSize">11sp</item>
-        <item name="android:textColor">#505050</item>
+    <style name="NavTextInactive" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="CircleShape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
     </style>
 </resources>

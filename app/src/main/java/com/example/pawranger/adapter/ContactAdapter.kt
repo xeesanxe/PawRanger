@@ -15,8 +15,7 @@ class ContactAdapter(
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvName: TextView = view.findViewById(R.id.tv_contact_name)
-        val tvPhone: TextView = view.findViewById(R.id.tv_contact_phone)
-        val ivDelete: View = view.findViewById(R.id.iv_delete)
+        val btnDelete: View = view.findViewById(R.id.btn_delete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -27,16 +26,9 @@ class ContactAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contacts[position]
         holder.tvName.text = contact.name
-        holder.tvPhone.text = contact.phoneNumber
-        
-        holder.ivDelete.setOnClickListener {
-            val currentPosition = holder.adapterPosition
-            if (currentPosition != RecyclerView.NO_POSITION) {
-                val contactToDelete = contacts[currentPosition]
-                onDeleteClick(contactToDelete)
-                contacts.removeAt(currentPosition)
-                notifyItemRemoved(currentPosition)
-            }
+
+        holder.btnDelete.setOnClickListener {
+            onDeleteClick(contact)
         }
     }
 
