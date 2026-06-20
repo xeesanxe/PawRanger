@@ -32,26 +32,28 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 1. Hubungkan ID dari XML Aliya ke Kotlin
         val etName = view.findViewById<EditText>(R.id.et_name)
         val etPhone = view.findViewById<EditText>(R.id.et_phone)
+        val etPassword = view.findViewById<EditText>(R.id.et_register_password) // Ini yang bikin merah tadi
         val cbTerms = view.findViewById<CheckBox>(R.id.cb_terms)
         val btnRegister = view.findViewById<MaterialButton>(R.id.btn_register)
 
         btnRegister.setOnClickListener {
-            val name = etName.text.toString()
-            val phone = etPhone.text.toString()
+            // 2. Ambil teks yang diketik user & hilangkan spasi typo (.trim)
             val name = etName.text.toString().trim()
             val rawPhone = etPhone.text.toString().trim()
-            val password = etPassword?.text?.toString()?.trim() ?: ""
+            val password = etPassword.text.toString().trim()
 
-            if (name.isNotEmpty() && rawPhone.isNotEmpty()) {
+            // 3. Cek apakah kolom kosong
+            if (name.isNotEmpty() && rawPhone.isNotEmpty() && password.isNotEmpty()) {
 
-            if (!cbTerms.isChecked) {
-                Toast.makeText(context, "Anda harus menyetujui syarat dan ketentuan", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+                // Cek centang persetujuan
+                if (!cbTerms.isChecked) {
+                    Toast.makeText(context, "Kamu harus menyetujui syarat dan ketentuan", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
 
-            if (name.isNotEmpty() && phone.isNotEmpty()) {
                 // Format nomor HP biar seragam jadi awalan 08...
                 val cleanPhone = formatPhoneNumber(rawPhone)
 
@@ -60,7 +62,7 @@ class RegisterFragment : Fragment() {
                 sessionManager.saveUserPhone(cleanPhone)
                 sessionManager.setLoggedIn(true)
 
-                // Ambil Token Firebase & Kirim ke Supabase
+                // Ambil Token Firebase & Kirim ke Server database Josua
                 FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                     if (!task.isSuccessful) {
                         Log.w("FCM", "Gagal ambil token Firebase", task.exception)
@@ -69,13 +71,14 @@ class RegisterFragment : Fragment() {
 
                     val fcmToken = task.result
 
-                    // Jalankan fungsi kirim ke internet (Supabase) di background
+                    // Jalankan fungsi kirim ke internet di background
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             sosRepository.saveUserProfile(name, cleanPhone, fcmToken)
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(context, "Registrasi & Sinkronisasi Berhasil!", Toast.LENGTH_SHORT).show()
-                                findNavController().navigate(R.id.action_registerFragment_to_navigation_home)
+                                // Lanjut ke halaman Login setelah sukses
+                                findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
                             }
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
@@ -84,21 +87,18 @@ class RegisterFragment : Fragment() {
                         }
                     }
                 }
-                sessionManager.saveUserPhone(phone)
-                Toast.makeText(context, "Registrasi Berhasil! Silakan masuk.", Toast.LENGTH_SHORT).show()
-                findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
             } else {
-                Toast.makeText(context, "Harap lengkapi Nama dan Nomor Telepon", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Harap lengkapi Nama, Nomor Telepon, dan Kata Sandi", Toast.LENGTH_SHORT).show()
             }
         }
 
+        // Tombol buat pindah ke halaman Login kalau udah punya akun
         view.findViewById<TextView>(R.id.tv_login_footer).setOnClickListener {
             findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
         }
     }
-}
 
-    // Fungsi penyaring nomor
+    // Fungsi penyaring nomor (sudah aman di luar onViewCreated)
     private fun formatPhoneNumber(phone: String?): String {
         if (phone.isNullOrEmpty()) return ""
         val numOnly = phone.replace(Regex("[^0-9+]"), "")
