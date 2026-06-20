@@ -1,140 +1,137 @@
 package com.example.pawranger
 
-import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.Service
-import android.content.Context
+import android.app.*
 import android.content.Intent
+import android.location.Location
 import android.os.Build
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.pawranger.data.EmergencyAlert
-import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.utils.SessionManager
-import com.google.android.gms.location.LocationServices
+import com.example.pawranger.utils.PhoneUtils
+import com.google.android.gms.location.*
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
+import java.util.*
 
 class SosService : Service() {
 
-    private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
-    private var sosJob: Job? = null
-    private val sosRepository = SOSRepository()
+    private val db = FirebaseFirestore.getInstance()
     private lateinit var sessionManager: SessionManager
-
-    override fun onBind(intent: Intent?): IBinder? = null
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var serviceJob = Job()
+    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
+    
+    private val NOTIFICATION_ID = 99
+    private val CHANNEL_ID = "SOS_CHANNEL"
 
     override fun onCreate() {
         super.onCreate()
-        sessionManager = SessionManager(applicationContext)
+        sessionManager = SessionManager(this)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        createNotificationChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action
+        val myPhone = PhoneUtils.formatPhoneNumber(sessionManager.getUserPhone())
+
         if (action == "START") {
-            startForegroundService()
-            startLooping()
+            startForeground(NOTIFICATION_ID, createNotification("PawRanger SOS AKTIF"))
+            triggerSos(myPhone)
         } else if (action == "STOP") {
-            stopLooping()
+            resolveSos(myPhone)
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
+
         return START_STICKY
     }
 
-    @SuppressLint("ForegroundServiceType")
-    private fun startForegroundService() {
-        val channelId = "sos_service_channel"
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Mode Darurat PawRanger",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("PawRanger SOS AKTIF")
-            .setContentText("Aplikasi sedang mengirimkan lokasi Anda berkala...")
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setOngoing(true)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1001, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
-        } else {
-            startForeground(1001, notification)
-        }
-    }
-
-    private fun startLooping() {
-        sosJob?.cancel()
-        sosJob = serviceScope.launch {
-            while (isActive) {
-                fetchAndSendLocation()
-                delay(120_000) // ubah 10_000 kalau mau testing
-            }
-        }
-    }
-
-    private fun stopLooping() {
-        sosJob?.cancel()
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun fetchAndSendLocation() {
-        // Ambil nomor pengirim dari sesi
-        val rawPhone = sessionManager.getUserPhone() ?: ""
-
-        // BERSILAT LIDAH 1: Bersihkan nomor pengirim pakai fungsi formatter biar pasti 08
-        val myPhone = formatPhoneNumber(rawPhone.replace(Regex("[^0-9+]"), ""))
-
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                serviceScope.launch(Dispatchers.IO) {
-                    try {
-                        val contacts = sosRepository.getEmergencyContacts(myPhone)
-                        contacts.forEach { contact ->
-
-                            // BERSILAT LIDAH 2: Bersihkan nomor penerima sebelum masuk payload
-                            val cleanReceiverPhone = formatPhoneNumber(contact.phoneNumber)
-
-                            val alert = EmergencyAlert(
-                                sender_phone = myPhone,
-                                receiver_phone = cleanReceiverPhone, // Menggunakan nomor yang sudah bersih
-                                latitude = location.latitude,
-                                longitude = location.longitude
-                            )
-
-                            sosRepository.sendSOS(alert)
-                        }
-                        Log.d("SOS_SYSTEM", "Lokasi berhasil dikirim via Service!")
-                    } catch (e: Exception) {
-                        Log.e("SOS_SYSTEM", "Error di Service: ${e.message}")
-                    }
+    private fun triggerSos(myPhone: String) {
+        serviceScope.launch {
+            val contactList = mutableListOf<String>()
+            try {
+                val snapshot = db.collection("contacts")
+                    .whereEqualTo("userId", myPhone)
+                    .get()
+                    .await()
+                
+                for (doc in snapshot.documents) {
+                    val p = doc.getString("phoneNumber")
+                    if (p != null) contactList.add(PhoneUtils.formatPhoneNumber(p))
                 }
+            } catch (e: Exception) {
+                Log.e("SosService", "Gagal ambil kontak: ${e.message}")
+            }
+
+            while (isActive) {
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                        location?.let {
+                            updateFirestoreAlert(myPhone, it, "ACTIVE", contactList)
+                        }
+                    }
+                } catch (e: SecurityException) {
+                    Log.e("SosService", "Permission error: ${e.message}")
+                }
+                delay(120000) 
             }
         }
     }
+
+    private fun resolveSos(myPhone: String) {
+        serviceScope.launch {
+            try {
+                db.collection("emergency_alerts").document(myPhone)
+                    .update("status", "RESOLVED", "timestamp", System.currentTimeMillis())
+            } catch (e: Exception) {
+                Log.e("SosService", "Error resolving: ${e.message}")
+            }
+            serviceJob.cancel()
+        }
+    }
+
+    private fun updateFirestoreAlert(phone: String, loc: Location, status: String, contacts: List<String>) {
+        val alertData = hashMapOf(
+            "victimPhone" to phone,
+            "victimName" to (sessionManager.getUserName() ?: "User"),
+            "latitude" to loc.latitude,
+            "longitude" to loc.longitude,
+            "status" to status,
+            "timestamp" to System.currentTimeMillis(),
+            "targetContacts" to contacts
+        )
+
+        db.collection("emergency_alerts").document(phone)
+            .set(alertData)
+            .addOnFailureListener { Log.e("Firebase", "Gagal update lokasi") }
+    }
+
+    private fun createNotification(content: String): Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Sinyal Bahaya Terdeteksi!")
+            .setContentText(content)
+            .setSmallIcon(R.drawable.ic_location_pin)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNEL_ID, "SOS Service", NotificationManager.IMPORTANCE_HIGH)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        serviceJob.cancel()
         super.onDestroy()
-        serviceScope.cancel()
-    }
-}
-
-// Fungsi penyaring ditaruh di luar class agar bisa diakses mudah
-fun formatPhoneNumber(phone: String?): String {
-    if (phone.isNullOrEmpty()) return ""
-    return when {
-        phone.startsWith("+62") -> "0" + phone.substring(3)
-        phone.startsWith("62") -> "0" + phone.substring(2)
-        else -> phone
     }
 }

@@ -7,105 +7,79 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
+import androidx.navigation.fragment.findNavController
 import com.example.pawranger.data.Contact
-import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.adapter.ContactAdapter
-import com.google.android.material.textfield.TextInputEditText
-
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import com.example.pawranger.data.ContactRepository
-
 import com.example.pawranger.utils.SessionManager
+import com.example.pawranger.utils.PhoneUtils
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class KontakFragment : Fragment() {
-    private lateinit var repository: ContactRepository
     private lateinit var adapter: ContactAdapter
     private lateinit var sessionManager: SessionManager
+    private lateinit var repository: ContactRepository
     private var contacts = mutableListOf<Contact>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        repository = ContactRepository()
         sessionManager = SessionManager(requireContext())
+        repository = ContactRepository()
         return inflater.inflate(R.layout.fragment_kontak, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         val rvContacts = view.findViewById<RecyclerView>(R.id.rv_contacts)
+
         adapter = ContactAdapter(contacts) { contact ->
-            deleteContact(contact.name)
+            showDeleteConfirmDialog(contact)
         }
         rvContacts.adapter = adapter
 
         loadContacts()
 
-        // Tombol Tambah
-        view.findViewById<View>(R.id.btn_add_contact_top).setOnClickListener {
-            showAddContactDialog()
-        }
-
-        view.findViewById<View>(R.id.iv_profile_top)?.setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
-        }
-
-        view.findViewById<View>(R.id.fab_emergency)?.setOnClickListener {
-            Toast.makeText(requireContext(), "DARURAT! Sinyal SOS dikirim.", Toast.LENGTH_LONG).show()
+        val btnAddTop = view.findViewById<View>(R.id.btn_add_contact_top)
+        btnAddTop?.setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_kontak_to_addContactFragment)
         }
     }
 
-    private fun showAddContactDialog() {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_contact, null)
-        val etName = dialogView.findViewById<TextInputEditText>(R.id.et_contact_name)
-        val etPhone = dialogView.findViewById<TextInputEditText>(R.id.et_contact_phone)
-
+    private fun showDeleteConfirmDialog(contact: Contact) {
         AlertDialog.Builder(requireContext())
-            .setView(dialogView)
-            .setPositiveButton("Simpan") { _, _ ->
-                val name = etName.text.toString()
-                val phone = etPhone.text.toString().replace(Regex("[^0-9]"), "")
-                val rawPhone = sessionManager.getUserPhone() ?: ""
-                val myPhone = rawPhone.replace(Regex("[^0-9]"), "")
-
-                if (name.isNotEmpty() && phone.isNotEmpty()) {
-                    val newContact = Contact(name, phone, myPhone)
-                    addContact(newContact)
-                } else {
-                    Toast.makeText(requireContext(), "Nama dan Nomor tidak boleh kosong", Toast.LENGTH_SHORT).show()
-                }
-            }
+            .setTitle("Hapus Kontak")
+            .setMessage("Apakah kamu yakin ingin menghapus ${contact.name}?")
+            .setPositiveButton("Hapus") { _, _ -> deleteContact(contact.name) }
             .setNegativeButton("Batal", null)
             .show()
     }
 
     private fun loadContacts() {
-        val rawPhone = sessionManager.getUserPhone() ?: ""
-        val myPhone = rawPhone.replace(Regex("[^0-9]"), "")
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // Ambil repository yang benar
-                val sosRepository = SOSRepository()
-                val supabaseContacts = sosRepository.getEmergencyContacts(myPhone)
-                contacts.clear()
-                contacts.addAll(supabaseContacts)
-                adapter.notifyDataSetChanged()
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal memuat data: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+                val rawMyPhone = sessionManager.getUserPhone() ?: ""
+                val myPhone = PhoneUtils.formatPhoneNumber(rawMyPhone)
 
-    private fun addContact(contact: Contact) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                repository.insertContact(contact)
-                loadContacts()
-                Toast.makeText(requireContext(), "Kontak berhasil disimpan ke Cloud", Toast.LENGTH_SHORT).show()
+                if (myPhone.isNotEmpty()) {
+                    val snapshot = FirebaseFirestore.getInstance().collection("contacts")
+                        .whereEqualTo("userId", myPhone)
+                        .get()
+                        .await()
+
+                    val firebaseContacts = snapshot.toObjects(Contact::class.java)
+
+                    contacts.clear()
+                    if (firebaseContacts.isNotEmpty()) {
+                        contacts.addAll(firebaseContacts)
+                    }
+                    adapter.notifyDataSetChanged()
+                }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal menyimpan: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Gagal memuat data kontak: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -113,11 +87,15 @@ class KontakFragment : Fragment() {
     private fun deleteContact(name: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                repository.deleteContact(name)
+                val rawMyPhone = sessionManager.getUserPhone() ?: ""
+                val myPhone = PhoneUtils.formatPhoneNumber(rawMyPhone)
+
+                repository.deleteContact(name, myPhone)
+
                 loadContacts()
-                Toast.makeText(requireContext(), "Kontak dihapus dari Cloud", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Kontak berhasil dihapus", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal menghapus: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Gagal menghapus kontak: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

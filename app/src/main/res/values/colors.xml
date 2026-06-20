@@ -1,24 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Adaptive Colors (Change with theme) -->
-    <color name="black">#FF000000</color> <!-- Becomes White in Dark -->
-    <color name="white">#FFFFFFFF</color> <!-- Becomes Dark in Dark -->
-    <color name="bg_light">#F7F8F7</color> <!-- Becomes Black in Dark -->
-    <color name="card_surface">#FFFFFF</color> <!-- Becomes Dark Gray in Dark -->
-    <color name="gray_text">#757575</color>
-    <color name="primary_dark">#435334</color>
-    <color name="title_green">#1B2E0B</color>
-    <color name="input_bg">#F2F4F2</color>
-    <color name="primary_blue">#1E2066</color>
-    <color name="accent_blue">#2D325A</color>
-    <color name="light_blue">#D6E4FF</color>
-
-    <!-- UI Accent Colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="bg_light">#F8FAFF</color>
+    <color name="primary_blue">#0047BB</color>
+    <color name="accent_blue">#007AFF</color>
+    <color name="secondary_blue">#0056E0</color>
+    <color name="light_blue_bg">#E8F1FF</color>
+    <color name="gray_text">#666666</color>
+    <color name="light_gray">#F2F2F2</color>
+    <color name="border_gray">#E0E0E0</color>
     <color name="panic_red">#D32F2F</color>
-    <color name="status_green">#A2D94A</color>
-    <color name="button_text">#435334</color>
+    <color name="safe_green">#4CAF50</color>
+    <color name="safe_blue">#007AFF</color>
 
-    <!-- Permanent Colors (Stay the same) -->
+    <!-- Design tokens from image -->
+    <color name="design_blue">#0047BB</color>
+    <color name="design_text_dark">#1A1A1A</color>
+    <color name="design_text_gray">#757575</color>
+    <color name="design_input_bg">#FFFFFF</color>
+
+    <color name="card_surface">#FFFFFF</color>
+    <color name="primary_dark">#003388</color>
+    <color name="status_green">#4CAF50</color>
     <color name="permanent_black">#000000</color>
-    <color name="permanent_white">#FFFFFF</color>
+    <color name="profile_header_start">#002B7F</color>
+    <color name="profile_header_end">#0047BB</color>
+    <color name="emergency_section_title">#B08E6B</color>
+    <color name="message_box_bg">#F2F5FF</color>
+    <color name="logout_red">#A32E2E</color>
+    <color name="logout_stroke">#FADEDE</color>
+    <color name="icon_circle_bg">#EDF2FF</color>
 </resources>

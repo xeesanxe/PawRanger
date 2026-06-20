@@ -51,7 +51,8 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             do {
                 val name = cursor.getString(cursor.getColumnIndexOrThrow(KEY_NAME))
                 val phone = cursor.getString(cursor.getColumnIndexOrThrow(KEY_PHONE))
-                contactsList.add(Contact(name, phone))
+                // Tambah id=0 dan userId=null sesuai constructor baru
+                contactsList.add(Contact(id = 0, name = name, phoneNumber = phone, userId = null))
             } while (cursor.moveToNext())
         }
         cursor.close()
