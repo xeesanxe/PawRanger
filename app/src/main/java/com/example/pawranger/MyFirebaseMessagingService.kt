@@ -1,6 +1,7 @@
 package com.example.pawranger
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -18,15 +19,12 @@ import kotlin.random.Random
 @SuppressLint("MissingFirebaseInstanceTokenRefresh")
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
-    // Fungsi ini otomatis berjalan saat ada pesan SOS masuk dari Firebase
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        // Ambil title dan body (Bisa dari notification atau data payload Firebase)
-        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "PANGGILAN DARURAT SOS! \uD83D\uDEA8"
-        val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "Seseorang butuh bantuanmu segera!"
-
-        // Ambil koordinat mentah dari data payload
+        // Ambil data payload dari Supabase Edge Function
+        val title = remoteMessage.data["title"] ?: "🚨 PANGGILAN DARURAT SOS!"
+        val body = remoteMessage.data["body"] ?: "Seseorang butuh bantuanmu segera!"
         val latitude = remoteMessage.data["latitude"]
         val longitude = remoteMessage.data["longitude"]
 
@@ -34,12 +32,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun sendNotification(title: String, messageBody: String, latitude: String?, longitude: String?) {
-        val channelId = "sos_channel_id" // Harus sama persis dengan yang dikirim dari Edge Function
+        val channelId = "sos_channel_id"
 
-        // Atur aksi: Buka Gmaps kalau ada koordinat, kalau kosong buka aplikasi PawRanger
+        // Format Link Google Maps universal, langsung nembak aplikasi Maps / Browser HP
         val intent = if (!latitude.isNullOrEmpty() && !longitude.isNullOrEmpty()) {
-            val gmapsUri = Uri.parse("https://maps.google.com/?q=$latitude,$longitude")
-            Intent(Intent.ACTION_VIEW, gmapsUri).apply {
+            val gmapsUrl = "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"
+            Intent(Intent.ACTION_VIEW, Uri.parse(gmapsUrl)).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
         } else {
@@ -53,22 +51,20 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        // Paksa pakai suara ALARM bawaan HP yang paling keras
+        // Ambil suara tipe ALARM sistem HP yang paling keras
         val alarmSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Khusus Android 8.0 (Oreo) ke atas, wajib pakai Notification Channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
                 "Sinyal Darurat SOS PawRanger",
-                NotificationManager.IMPORTANCE_HIGH // Wajib HIGH biar langsung muncul pop-up
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Channel khusus untuk alarm darurat PawRanger"
 
-                // Atribut ini yang bikin HP ngeluarin suara teriak kaya alarm
                 val audioAttributes = AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .setUsage(AudioAttributes.USAGE_ALARM)
@@ -76,12 +72,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
                 setSound(alarmSoundUri, audioAttributes)
                 enableVibration(true)
-                vibrationPattern = longArrayOf(0, 1000, 500, 1000, 500, 1000) // Getaran SOS agresif
+                vibrationPattern = longArrayOf(0, 1000, 500, 1000, 500, 1000)
             }
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Buat tampilan Pop-up Notifikasinya menggunakan icon PawRanger
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_shield)
             .setContentTitle(title)
@@ -93,7 +88,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setContentIntent(pendingIntent)
 
-        // Tembakkan notifikasi ke layar HP
-        notificationManager.notify(Random.nextInt(), notificationBuilder.build())
+        // 🔥 TRIK PAMUNGKAS: Paksa sistem Android buat ngulang suara alarm (Looping) tanpa putus
+        val notification = notificationBuilder.build()
+        notification.flags = notification.flags or Notification.FLAG_INSISTENT
+
+        // Tembak ke layar
+        notificationManager.notify(Random.nextInt(), notification)
     }
 }
