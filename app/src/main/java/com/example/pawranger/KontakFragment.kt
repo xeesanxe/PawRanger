@@ -10,14 +10,10 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
 import androidx.navigation.fragment.findNavController
 import com.example.pawranger.data.Contact
-import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.adapter.ContactAdapter
-import com.google.android.material.textfield.TextInputEditText
-
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.example.pawranger.data.ContactRepository
-
 import com.example.pawranger.utils.SessionManager
 
 class KontakFragment : Fragment() {
@@ -27,57 +23,53 @@ class KontakFragment : Fragment() {
     private var contacts = mutableListOf<Contact>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        repository = ContactRepository()
+        repository = ContactRepository() // Pakai repository Firebase dari Josua
         sessionManager = SessionManager(requireContext())
         return inflater.inflate(R.layout.fragment_kontak, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         val rvContacts = view.findViewById<RecyclerView>(R.id.rv_contacts)
+
+        // Setup Adapter: Pas di-klik, muncul dialog konfirmasi Hapus
         adapter = ContactAdapter(contacts) { contact ->
-            AlertDialog.Builder(requireContext())
-                .setTitle("Hapus Kontak")
-                .setMessage("Apakah Anda yakin ingin menghapus ${contact.name}?")
-                .setPositiveButton("Hapus") { _, _ -> deleteContact(contact.name) }
-                .setNegativeButton("Batal", null)
-                .show()
+            showDeleteConfirmDialog(contact)
         }
         rvContacts.adapter = adapter
 
         loadContacts()
 
-        // FAB Tambah Kontak
-        view.findViewById<View>(R.id.btn_add_contact_top).setOnClickListener {
+        // FAB Pindah Halaman Tambah Kontak (Bawaan UI Aliya)
+        val btnAddTop = view.findViewById<View>(R.id.btn_add_contact_top)
+        btnAddTop?.setOnClickListener {
             findNavController().navigate(R.id.action_navigation_kontak_to_addContactFragment)
         }
     }
 
-    private fun loadContacts() {
-        val rawPhone = sessionManager.getUserPhone() ?: ""
-        val myPhone = rawPhone.replace(Regex("[^0-9]"), "")
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val sosRepository = SOSRepository()
-                val supabaseContacts = sosRepository.getEmergencyContacts(myPhone)
-                contacts.clear()
-                contacts.addAll(supabaseContacts)
-                adapter.notifyDataSetChanged()
-            } catch (e: Exception) {
-                // Ignore silent or log
-            }
-        }
+    // Fungsi Terpisah untuk Nampilin Konfirmasi Hapus
+    private fun showDeleteConfirmDialog(contact: Contact) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Hapus Kontak")
+            .setMessage("Apakah kamu yakin ingin menghapus ${contact.name}?")
+            .setPositiveButton("Hapus") { _, _ -> deleteContact(contact.name) }
+            .setNegativeButton("Batal", null)
+            .show()
     }
 
-    private fun addContact(contact: Contact) {
+    private fun loadContacts() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                repository.insertContact(contact)
-                loadContacts()
-                Toast.makeText(requireContext(), "Kontak berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                // Tarik data langsung dari ContactRepository (Firebase)
+                val firebaseContacts = repository.getContacts()
+                contacts.clear()
+                if (firebaseContacts.isNotEmpty()) {
+                    contacts.addAll(firebaseContacts)
+                }
+                adapter.notifyDataSetChanged()
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal menyimpan: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Gagal memuat data kontak: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -86,10 +78,10 @@ class KontakFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 repository.deleteContact(name)
-                loadContacts()
+                loadContacts() // Muat ulang setelah dihapus
                 Toast.makeText(requireContext(), "Kontak berhasil dihapus", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal menghapus: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Gagal menghapus kontak: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

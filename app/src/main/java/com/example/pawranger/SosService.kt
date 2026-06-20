@@ -105,11 +105,13 @@ class SosService : Service() {
                             // BERSILAT LIDAH 2: Bersihkan nomor penerima sebelum masuk payload
                             val cleanReceiverPhone = formatPhoneNumber(contact.phoneNumber)
 
+                            // INI YANG DIBENERIN: Sesuaikan sama format Josua
                             val alert = EmergencyAlert(
-                                sender_phone = myPhone,
-                                receiver_phone = cleanReceiverPhone, // Menggunakan nomor yang sudah bersih
+                                userId = myPhone, // sender_phone diganti jadi userId
                                 latitude = location.latitude,
-                                longitude = location.longitude
+                                longitude = location.longitude,
+                                message = "Darurat ke kontak: $cleanReceiverPhone", // Nyelipin nomor penerima di sini
+                                status = "ACTIVE"
                             )
 
                             sosRepository.sendSOS(alert)

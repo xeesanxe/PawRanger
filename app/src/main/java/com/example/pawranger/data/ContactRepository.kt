@@ -1,26 +1,56 @@
 package com.example.pawranger.data
 
-import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 class ContactRepository {
-    private val client = SupabaseConfig.client
+    private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
-    suspend fun getContacts(): List<Contact> = withContext(Dispatchers.IO) {
-        client.postgrest.from("contacts").select().decodeList<Contact>()
+    suspend fun getContacts(): List<Contact> {
+        val userId = auth.currentUser?.uid ?: return emptyList()
+
+        val snapshot = db.collection("contacts")
+            .whereEqualTo("userId", userId)
+            .get()
+            .await()
+
+        return snapshot.documents.map { doc ->
+            Contact(
+                id = 0,
+                name = doc.getString("name") ?: "",
+                phoneNumber = doc.getString("phoneNumber") ?: "",
+                userId = doc.getString("userId")
+            )
+        }
     }
 
-    suspend fun insertContact(contact: Contact): Unit = withContext(Dispatchers.IO) {
-        // Harus menggunakan listOf() untuk Postgrest v2.x
-        client.postgrest.from("contacts").insert(listOf(contact))
+    suspend fun insertContact(contact: Contact) {
+        val userId = auth.currentUser?.uid
+
+        val data = hashMapOf(
+            "name" to contact.name,
+            "phoneNumber" to contact.phoneNumber,
+            "userId" to userId
+        )
+
+        db.collection("contacts")
+            .add(data)
+            .await()
     }
 
-    suspend fun deleteContact(name: String): Unit = withContext(Dispatchers.IO) {
-        client.postgrest.from("contacts").delete {
-            filter {
-                eq("name", name)
-            }
+    suspend fun deleteContact(name: String) {
+        val userId = auth.currentUser?.uid ?: return
+
+        val snapshot = db.collection("contacts")
+            .whereEqualTo("userId", userId)
+            .whereEqualTo("name", name)
+            .get()
+            .await()
+
+        for (doc in snapshot.documents) {
+            doc.reference.delete().await()
         }
     }
 }

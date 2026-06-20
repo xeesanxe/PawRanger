@@ -4,11 +4,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class EmergencyAlert(
-    val id: String? = null,
-    val sender_phone: String,
-    val receiver_phone: String,
-    val latitude: Double,
-    val longitude: Double,
-    val status: String = "PENDING",
-    val created_at: String? = null
+    val id: Long? = null,
+    val userId: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val message: String? = null,
+    val status: String? = null,
+    val createdAt: String? = null
 )

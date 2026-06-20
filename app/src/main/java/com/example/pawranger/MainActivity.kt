@@ -15,6 +15,7 @@ import com.example.pawranger.data.EmergencyAlert
 import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.utils.SessionManager
 import com.example.pawranger.utils.ViewUtils
+import com.example.pawranger.firebase.FirebaseTest
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.*
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        FirebaseTest.testFirestore()
         Log.d("MainActivity", "setContentView finished")
 
         sessionManager = SessionManager(this)
@@ -49,7 +51,7 @@ class MainActivity : AppCompatActivity() {
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
-        
+
         if (navHostFragment != null) {
             val navController = navHostFragment.navController
             val bottomNavContainer = findViewById<View>(R.id.cv_bottom_nav)
@@ -61,7 +63,7 @@ class MainActivity : AppCompatActivity() {
                 val paddingPx = (130 * resources.displayMetrics.density).toInt()
                 fragmentContainer.setPadding(0, 0, 0, paddingPx)
             }
-            
+
             if (bottomNavView != null) {
                 bottomNavView.setOnItemSelectedListener { item ->
                     val navOptions = NavOptions.Builder()
@@ -73,7 +75,7 @@ class MainActivity : AppCompatActivity() {
                             saveState = true
                         )
                         .build()
-                    
+
                     navController.navigate(item.itemId, null, navOptions)
                     true
                 }
@@ -102,16 +104,16 @@ class MainActivity : AppCompatActivity() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (!task.isSuccessful) return@addOnCompleteListener
             val token = task.result
-            updateFcmTokenToSupabase(token)
+            updateFcmTokenToServer(token)
         }
     }
 
-    private fun updateFcmTokenToSupabase(token: String) {
+    private fun updateFcmTokenToServer(token: String) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d("SUPABASE_FCM", "Token FCM: $token")
+                Log.d("FCM_TOKEN", "Token FCM: $token")
             } catch (e: Exception) {
-                Log.e("SUPABASE_FCM", "Error: ${e.message}")
+                Log.e("FCM_TOKEN", "Error: ${e.message}")
             }
         }
     }
@@ -120,7 +122,7 @@ class MainActivity : AppCompatActivity() {
         val rawPhone = sessionManager.getUserPhone() ?: ""
         val cleanPhone = rawPhone.replace(Regex("[^0-9]"), "")
         if (cleanPhone.isEmpty()) return
-        
+
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 sosRepository.connect()
@@ -162,14 +164,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         val title = if (isReminder) "⚠️ UPDATE LOKASI DARURAT!" else "⚠️ SINYAL DARURAT!"
-        
+
         MaterialAlertDialogBuilder(this)
             .setTitle(title)
-            .setMessage("Nomor: ${alert.sender_phone}\nLokasi: ${alert.latitude}, ${alert.longitude}")
+            .setMessage("Nomor: ${alert.userId ?: "Tidak diketahui"}\nLokasi: ${alert.latitude ?: 0.0}, ${alert.longitude ?: 0.0}")
             .setCancelable(false)
             .setPositiveButton("Buka Google Maps") { _, _ ->
                 stopAlarm()
-                openInGoogleMaps(alert.latitude, alert.longitude)
+                openInGoogleMaps(alert.latitude ?: 0.0, alert.longitude ?: 0.0)
             }
             .setNeutralButton("Berhenti Melacak") { _, _ ->
                 stopTracking()
@@ -187,7 +189,7 @@ class MainActivity : AppCompatActivity() {
         if (mapIntent.resolveActivity(packageManager) != null) {
             startActivity(mapIntent)
         } else {
-            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng"))
+            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?q=$lat,$lng"))
             startActivity(browserIntent)
         }
     }

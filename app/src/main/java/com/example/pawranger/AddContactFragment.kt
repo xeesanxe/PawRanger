@@ -44,7 +44,7 @@ class AddContactFragment : Fragment() {
     private fun saveContact() {
         val name = etName.text.toString().trim()
         val phoneInput = etPhone.text.toString().trim()
-        
+
         if (name.isEmpty() || phoneInput.isEmpty()) {
             Toast.makeText(requireContext(), "Nama dan Nomor tidak boleh kosong", Toast.LENGTH_SHORT).show()
             return
@@ -56,7 +56,9 @@ class AddContactFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val newContact = Contact(name, phone, myPhone)
+                // INI YANG DIBENERIN: Pakai named parameter biar mesin nggak bingung bedain id (Int) sama nama (String)
+                val newContact = Contact(name = name, phoneNumber = phone, userId = myPhone)
+
                 repository.insertContact(newContact)
                 Toast.makeText(requireContext(), "Kontak berhasil ditambahkan", Toast.LENGTH_SHORT).show()
                 findNavController().navigateUp()
