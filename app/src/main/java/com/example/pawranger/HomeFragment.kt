@@ -1,14 +1,10 @@
 package com.example.pawranger
 
 import android.Manifest
-import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
-import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
@@ -21,8 +17,8 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.utils.SessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -34,7 +30,13 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 class HomeFragment : Fragment(), OnMapReadyCallback {
@@ -44,19 +46,39 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var sessionManager: SessionManager
     private lateinit var locationCallback: LocationCallback
-    private var tvCurrentAddress: TextView? = null
-    private val sosRepository = SOSRepository()
-
-    // Variabel "saklar" untuk nyalain/matiin Foreground Service SOS
+    private lateinit var tvCurrentAddress: TextView
+    private lateinit var tvGreeting: TextView
     private var isSosActive = false
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        ) {
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+        if (fineLocationGranted || coarseLocationGranted) {
             enableMyLocation()
+        }
+    }
+
+    private fun checkLocationPermission() {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        val missingPermissions = permissions.filter {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isEmpty()) {
+            enableMyLocation()
+        } else {
+            requestPermissionLauncher.launch(missingPermissions.toTypedArray())
         }
     }
 
@@ -66,6 +88,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_home, container, false)
         sessionManager = SessionManager(requireContext())
+
+        tvCurrentAddress = view.findViewById(R.id.tv_current_address)
+        tvGreeting = view.findViewById(R.id.tv_greeting)
+        
+        val userName = sessionManager.getUserName() ?: "Aliya"
+        tvGreeting.text = "Hai, $userName"
 
         mapView = view.findViewById(R.id.map_view)
         mapView.onCreate(savedInstanceState)
@@ -81,9 +109,28 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private fun setupLocationCallback() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                for (location in locationResult.locations) {
-                    getAddress(location.latitude, location.longitude)
+                val location = locationResult.lastLocation ?: return
+                updateAddressText(location.latitude, location.longitude)
+            }
+        }
+    }
+
+    private fun updateAddressText(lat: Double, lng: Double) {
+        if (!isAdded) return
+        
+        lifecycleScope.launch(Dispatchers.IO) {
+            val geocoder = Geocoder(requireContext(), Locale.getDefault())
+            try {
+                // Menggunakan getFromLocation yang async (untuk API 33+) atau yang lama
+                val addresses = geocoder.getFromLocation(lat, lng, 1)
+                withContext(Dispatchers.Main) {
+                    if (!addresses.isNullOrEmpty()) {
+                        val address = addresses[0].getAddressLine(0)
+                        tvCurrentAddress.text = address
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Geocoder error: ${e.message}")
             }
         }
     }
@@ -91,110 +138,64 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val tvHalo = view.findViewById<TextView>(R.id.tv_halo)
-        val ivProfile = view.findViewById<ImageView>(R.id.iv_profile_top)
-        tvCurrentAddress = view.findViewById(R.id.tv_current_address)
-
-        tvHalo.text = "Halo, ${sessionManager.getUserName()}"
-
-        sessionManager.getProfileImage()?.let { uriString ->
-            ivProfile.setImageURI(Uri.parse(uriString))
-        }
-
-        // Logic Tombol SOS: Tekan lama untuk Nyala / Mati
         view.findViewById<View>(R.id.cv_sos).setOnLongClickListener {
             toggleSosMode()
             true
         }
 
-        view.findViewById<View>(R.id.iv_profile_top).setOnClickListener {
-            findNavController().navigate(R.id.action_navigation_home_to_navigation_profile)
+        view.findViewById<FloatingActionButton>(R.id.fab_my_location)?.setOnClickListener {
+            enableMyLocation()
         }
 
-        view.findViewById<View>(R.id.fab_my_location).setOnClickListener {
-            checkLocationPermission()
-        }
-
-        view.findViewById<View>(R.id.fab_layers).setOnClickListener {
-            googleMap?.let {
-                it.mapType = if (it.mapType == GoogleMap.MAP_TYPE_NORMAL) {
-                    GoogleMap.MAP_TYPE_HYBRID
-                } else {
-                    GoogleMap.MAP_TYPE_NORMAL
-                }
+        view.findViewById<FloatingActionButton>(R.id.fab_layers)?.setOnClickListener {
+            val nextType = when (googleMap?.mapType) {
+                GoogleMap.MAP_TYPE_NORMAL -> GoogleMap.MAP_TYPE_SATELLITE
+                else -> GoogleMap.MAP_TYPE_NORMAL
             }
+            googleMap?.mapType = nextType
         }
-
-        startPulseAnimation(view.findViewById(R.id.sos_pulse_1), 1.4f)
-        startPulseAnimation(view.findViewById(R.id.sos_pulse_2), 1.2f)
     }
 
-    // --- FUNGSI MENGONTROL FOREGROUND SERVICE ---
     private fun toggleSosMode() {
         if (isSosActive) {
             isSosActive = false
-            // Matikan Service
             val intent = Intent(requireContext(), SosService::class.java).apply { action = "STOP" }
             requireContext().stopService(intent)
-            Toast.makeText(context, "Sinyal SOS Dimatikan. Kondisi Aman.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Sinyal SOS Dimatikan.", Toast.LENGTH_SHORT).show()
         } else {
             isSosActive = true
-            // Jalankan Service Kebal Android
             val intent = Intent(requireContext(), SosService::class.java).apply { action = "START" }
             ContextCompat.startForegroundService(requireContext(), intent)
-            Toast.makeText(context, "SOS AKTIF! Lokasi dikirim tiap 2 menit.", Toast.LENGTH_LONG).show()
-        }
-    }
-    // --- AKHIR FUNGSI KONTROL SERVICE ---
-
-    private fun startPulseAnimation(view: View?, scale: Float) {
-        if (view == null) return
-        val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, scale)
-        val scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, scale)
-        val alpha = PropertyValuesHolder.ofFloat(View.ALPHA, 1.0f, 0.0f)
-
-        ObjectAnimator.ofPropertyValuesHolder(view, scaleX, scaleY, alpha).apply {
-            duration = 1500
-            repeatCount = ValueAnimator.INFINITE
-            repeatMode = ValueAnimator.RESTART
-            start()
+            Toast.makeText(context, "SOS AKTIF!", Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onMapReady(map: GoogleMap) {
+        Log.d("HomeFragment", "Peta berhasil dimuat (Map Ready)")
         googleMap = map
         val defaultLocation = LatLng(-6.2088, 106.8456)
         googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 15f))
+        
+        // Menambahkan sample marker "Safe Zones"
+        addSampleMarkers()
+        
         checkLocationPermission()
     }
 
-    private fun checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            enableMyLocation()
-        } else {
-            requestPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
-    }
+    private fun addSampleMarkers() {
+        val safeZones = listOf(
+            LatLng(-6.2100, 106.8400) to "Safe Zone 1",
+            LatLng(-6.2050, 106.8500) to "Safe Zone 2",
+            LatLng(-6.2150, 106.8480) to "Safe Zone 3"
+        )
 
-    private fun getAddress(lat: Double, lng: Double) {
-        try {
-            val geocoder = Geocoder(requireContext(), Locale.getDefault())
-            val addresses = geocoder.getFromLocation(lat, lng, 1)
-            if (addresses != null && addresses.isNotEmpty()) {
-                val address = addresses[0].getAddressLine(0)
-                tvCurrentAddress?.text = address
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        safeZones.forEach { (latLng, title) ->
+            googleMap?.addMarker(
+                MarkerOptions()
+                    .position(latLng)
+                    .title(title)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+            )
         }
     }
 
@@ -211,8 +212,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 googleMap?.isMyLocationEnabled = true
                 googleMap?.uiSettings?.isMyLocationButtonEnabled = false
 
-                val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-                    .setMinUpdateIntervalMillis(2000)
+                val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
+                    .setMinUpdateIntervalMillis(5000)
                     .build()
 
                 fusedLocationClient.requestLocationUpdates(
@@ -224,8 +225,8 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     location?.let {
                         val currentLatLng = LatLng(it.latitude, it.longitude)
-                        googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-                        getAddress(it.latitude, it.longitude)
+                        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
+                        updateAddressText(it.latitude, it.longitude)
                     }
                 }
             } catch (e: SecurityException) {
@@ -237,29 +238,21 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
         mapView.onResume()
-        if (::fusedLocationClient.isInitialized && ::locationCallback.isInitialized) {
-            startLocationUpdates()
-        }
     }
 
-    private fun startLocationUpdates() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-                .build()
-            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-        }
+    override fun onStart() {
+        super.onStart()
+        mapView.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mapView.onStop()
     }
 
     override fun onPause() {
         super.onPause()
         mapView.onPause()
-        if (::fusedLocationClient.isInitialized && ::locationCallback.isInitialized) {
-            fusedLocationClient.removeLocationUpdates(locationCallback)
-        }
     }
 
     override fun onDestroy() {

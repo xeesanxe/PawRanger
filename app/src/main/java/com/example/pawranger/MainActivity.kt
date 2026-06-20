@@ -18,12 +18,9 @@ import com.example.pawranger.utils.ViewUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.messaging.FirebaseMessaging
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private val sosRepository = SOSRepository()
@@ -33,12 +30,14 @@ class MainActivity : AppCompatActivity() {
     private var mediaPlayer: MediaPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("MainActivity", "onCreate started")
         // Force Light Mode
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        Log.d("MainActivity", "setContentView finished")
 
         sessionManager = SessionManager(this)
         startSOSListener()
@@ -58,8 +57,8 @@ class MainActivity : AppCompatActivity() {
 
             val fragmentContainer = findViewById<View>(R.id.nav_host_fragment)
             if (fragmentContainer != null) {
-                // Konversi 110dp ke pixel untuk padding bawah agar tidak tertutup nav bar
-                val paddingPx = (110 * resources.displayMetrics.density).toInt()
+                // Padding bawah agar konten tidak tertutup bottom nav melayang
+                val paddingPx = (130 * resources.displayMetrics.density).toInt()
                 fragmentContainer.setPadding(0, 0, 0, paddingPx)
             }
             
@@ -89,7 +88,7 @@ class MainActivity : AppCompatActivity() {
             navController.addOnDestinationChangedListener { _, destination, _ ->
                 if (bottomNavContainer != null) {
                     when (destination.id) {
-                        R.id.splashFragment, R.id.loginFragment, R.id.registerFragment, R.id.navigation_profile -> {
+                        R.id.splashFragment, R.id.loginFragment, R.id.registerFragment -> {
                             bottomNavContainer.visibility = View.GONE
                         }
                         else -> {
@@ -99,37 +98,20 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        // Ambil token FCM unik dari HP ini
+
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("FCM_TOKEN", "Gagal mengambil token FCM baru", task.exception)
-                return@addOnCompleteListener
-            }
-
-            // Ini token unik HP lu yang berhasil ditangkap!
+            if (!task.isSuccessful) return@addOnCompleteListener
             val token = task.result
-            Log.d("FCM_TOKEN", "Token FCM HP ini: $token")
-
-            // PANGGIL FUNGSI UPDATE KE SUPABASE DI SINI
             updateFcmTokenToSupabase(token)
         }
     }
 
     private fun updateFcmTokenToSupabase(token: String) {
-        val currentUserId = "ambil_id_user_yang_lagi_login_di_sini" // Misal dari Supabase Auth atau Session
-
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Contoh logic update kolom fcm_token milik user yang sedang aktif
-                // Silakan sesuaikan dengan sintaks library Supabase Postgrest yang kalian pakai
-                /* supabase.from("users")
-                    .update(mapOf("fcm_token" to token))
-                    .eq("id", currentUserId)
-                    .execute()
-                */
-                Log.d("SUPABASE_FCM", "Token FCM berhasil dikirim dan disimpan di Supabase!")
+                Log.d("SUPABASE_FCM", "Token FCM: $token")
             } catch (e: Exception) {
-                Log.e("SUPABASE_FCM", "Gagal nyimpen token ke Supabase: ${e.message}")
+                Log.e("SUPABASE_FCM", "Error: ${e.message}")
             }
         }
     }
@@ -154,12 +136,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPeriodicReminders() {
-        // Hentikan tracking sebelumnya jika ada
         trackingJob?.cancel()
-        
         trackingJob = CoroutineScope(Dispatchers.Main).launch {
             while (isActive) {
-                delay(120000) // Tunggu 2 menit (120.000 ms)
+                delay(120000)
                 lastAlert?.let { alert ->
                     showSOSDialog(alert, isReminder = true)
                 }
@@ -168,7 +148,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSOSDialog(alert: EmergencyAlert, isReminder: Boolean = false) {
-        // Mainkan Suara Alarm jika bukan reminder (agar tidak tumpang tindih)
         if (!isReminder) {
             try {
                 mediaPlayer?.stop()
@@ -208,7 +187,6 @@ class MainActivity : AppCompatActivity() {
         if (mapIntent.resolveActivity(packageManager) != null) {
             startActivity(mapIntent)
         } else {
-            // Jika aplikasi Gmaps tidak ada, buka browser
             val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng"))
             startActivity(browserIntent)
         }

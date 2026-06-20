@@ -13,6 +13,7 @@ class SessionManager(context: Context) {
         private const val USER_PHONE = "userPhone"
         private const val PROFILE_IMAGE = "profileImage"
         private const val IS_DARK_MODE = "isDarkMode"
+        private const val EMERGENCY_MESSAGE = "emergencyMessage"
     }
 
     fun setDarkMode(isDarkMode: Boolean) {
@@ -61,6 +62,15 @@ class SessionManager(context: Context) {
 
     fun getProfileImage(): String? {
         return prefs.getString(PROFILE_IMAGE, null)
+    }
+
+    fun saveEmergencyMessage(message: String) {
+        prefs.edit().putString(EMERGENCY_MESSAGE, message).apply()
+    }
+
+    fun getEmergencyMessage(): String {
+        return prefs.getString(EMERGENCY_MESSAGE, "Halo, saya butuh bantuan segera. Lokasi saya dikirimkan otomatis melalui aplikasi ini.") 
+            ?: "Halo, saya butuh bantuan segera. Lokasi saya dikirimkan otomatis melalui aplikasi ini."
     }
 
     fun logout() {

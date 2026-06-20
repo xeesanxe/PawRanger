@@ -5,9 +5,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -19,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.android.material.button.MaterialButton
 
 class RegisterFragment : Fragment() {
     private lateinit var sessionManager: SessionManager
@@ -34,16 +34,24 @@ class RegisterFragment : Fragment() {
 
         val etName = view.findViewById<EditText>(R.id.et_name)
         val etPhone = view.findViewById<EditText>(R.id.et_phone)
-        val etPassword = view.findViewById<EditText>(R.id.et_register_password)
-        val btnRegister = view.findViewById<Button>(R.id.btn_register)
+        val cbTerms = view.findViewById<CheckBox>(R.id.cb_terms)
+        val btnRegister = view.findViewById<MaterialButton>(R.id.btn_register)
 
         btnRegister.setOnClickListener {
+            val name = etName.text.toString()
+            val phone = etPhone.text.toString()
             val name = etName.text.toString().trim()
             val rawPhone = etPhone.text.toString().trim()
             val password = etPassword?.text?.toString()?.trim() ?: ""
 
             if (name.isNotEmpty() && rawPhone.isNotEmpty()) {
 
+            if (!cbTerms.isChecked) {
+                Toast.makeText(context, "Anda harus menyetujui syarat dan ketentuan", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            if (name.isNotEmpty() && phone.isNotEmpty()) {
                 // Format nomor HP biar seragam jadi awalan 08...
                 val cleanPhone = formatPhoneNumber(rawPhone)
 
@@ -76,19 +84,19 @@ class RegisterFragment : Fragment() {
                         }
                     }
                 }
+                sessionManager.saveUserPhone(phone)
+                Toast.makeText(context, "Registrasi Berhasil! Silakan masuk.", Toast.LENGTH_SHORT).show()
+                findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
             } else {
                 Toast.makeText(context, "Harap lengkapi Nama dan Nomor Telepon", Toast.LENGTH_SHORT).show()
             }
-        }
-
-        view.findViewById<ImageView>(R.id.btn_back).setOnClickListener {
-            findNavController().navigateUp()
         }
 
         view.findViewById<TextView>(R.id.tv_login_footer).setOnClickListener {
             findNavController().navigate(R.id.action_registerFragment_to_loginFragment)
         }
     }
+}
 
     // Fungsi penyaring nomor
     private fun formatPhoneNumber(phone: String?): String {

@@ -46,8 +46,16 @@
     <string name="footer_has_account">Sudah punya akun? Masuk di sini</string>
     <string name="security_notice">Sistem Enkripsi Tingkat Militer</string>
     <string name="title_profile">Profil</string>
-    <string name="label_email_dummy">aliya.nur@example.com</string>
-    <string name="btn_edit_profile_label">Edit Profil</string>
+    <string name="title_edit_account_info">Ubah Informasi Akun</string>
+    <string name="label_profile_picture">FOTO PROFIL</string>
+    <string name="title_verified_info">Informasi Terverifikasi</string>
+    <string name="desc_verified_info">Perubahan data penting mungkin memerlukan verifikasi ulang untuk menjaga keamanan akun Anda.</string>
+    <string name="btn_save_changes">Simpan Perubahan</string>
+    <string name="btn_edit_profile_label">Ubah Profil</string>
+    <string name="menu_account">Akun</string>
+    <string name="menu_emergency_message">Pesan Darurat</string>
+    <string name="menu_help_center">Pusat Bantuan</string>
+    <string name="menu_logout">Keluar</string>
     <string name="btn_logout_label">KELUAR DARI AKUN</string>
     <string name="hint_emergency_message">Tulis pesan darurat Anda di sini...</string>
     <string name="title_history">History</string>
@@ -82,4 +90,8 @@
     <string name="status_aman">STATUS: AMAN</string>
     <string name="sos_label">SOS</string>
     <string name="sos_instruction">TAHAN UNTUK SOS</string>
+    <string name="content_description_settings">Settings</string>
+    <string name="content_description_profile">Profile image</string>
+    <string name="sos_hold_trigger">Hold to trigger</string>
+    <string name="cd_panic_icon">Panic Icon</string>
 </resources>
