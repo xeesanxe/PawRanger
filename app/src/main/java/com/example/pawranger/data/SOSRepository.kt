@@ -14,9 +14,21 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 
-// Data class kecil untuk menangkap fcm_token dari Supabase
+// Data class untuk menangkap fcm_token dari Supabase
 @Serializable
 data class TokenResponse(val fcm_token: String? = null)
+
+// Data class untuk menangkap nama pengguna saat login
+@Serializable
+data class ProfileResponse(val nama: String? = null)
+
+// Data class untuk proses insert/upsert profil baru
+@Serializable
+data class ProfileInsert(val nama: String, val no_telp: String, val fcm_token: String)
+
+// Data class untuk memperbarui token Firebase saat login ulang
+@Serializable
+data class TokenUpdate(val fcm_token: String)
 
 class SOSRepository {
     private val client = SupabaseConfig.client
@@ -31,20 +43,20 @@ class SOSRepository {
         client.postgrest.from("contacts")
             .select {
                 filter {
-                    eq("owner_phone", myPhone) // Sesuai kolom di tabel contacts Anda
+                    eq("owner_phone", myPhone) // Sesuai kolom di tabel contacts kamu
                 }
             }
             .decodeList<Contact>()
     }
 
-    // --- TAMBAHAN TAHAP 1: MENGAMBIL FCM TOKEN TARGET ---
+    // MENGAMBIL FCM TOKEN TARGET
     suspend fun getFcmTokenByPhone(phoneNumber: String): String? = withContext(Dispatchers.IO) {
         try {
             // Query ke tabel profiles untuk mencari fcm_token berdasarkan nomor telepon target
             val result = client.postgrest.from("profiles")
                 .select {
                     filter {
-                        eq("no_telp", phoneNumber) // Pastikan nama kolom "no_telp" sesuai dengan yang ada di Supabase
+                        eq("no_telp", phoneNumber) // Pastikan nama kolom "no_telp" sesuai
                     }
                 }
                 .decodeSingleOrNull<TokenResponse>()
@@ -55,7 +67,6 @@ class SOSRepository {
             null
         }
     }
-    // --- AKHIR TAMBAHAN TAHAP 1 ---
 
     // Mendengarkan sinyal SOS baru secara Realtime
     fun listenForAlerts(myPhone: String): Flow<EmergencyAlert> {
@@ -71,6 +82,50 @@ class SOSRepository {
             insertAction.decodeRecord<EmergencyAlert>()
         }.filter { alert ->
             alert.receiver_phone == myPhone
+        }
+    }
+
+    // FUNGSI BARU: Menyimpan Profil dan Token ke Supabase saat Register
+    suspend fun saveUserProfile(nama: String, noTelp: String, fcmToken: String) = withContext(Dispatchers.IO) {
+        try {
+            val profileData = ProfileInsert(nama, noTelp, fcmToken)
+            // Menggunakan upsert agar memperbarui data jika nomor sudah pernah terdaftar
+            client.postgrest.from("profiles").upsert(profileData)
+        } catch (e: Exception) {
+            Log.e("SOS_REPO", "Gagal simpan profil: ${e.message}")
+            throw e
+        }
+    }
+
+    // FUNGSI BARU: Memverifikasi nomor saat Login dan menyinkronkan Token terbaru
+    suspend fun loginUserAndSyncToken(noTelp: String, newToken: String): String? = withContext(Dispatchers.IO) {
+        try {
+            // 1. Cek apakah nomor tersebut ada di tabel profiles
+            val result = client.postgrest.from("profiles")
+                .select {
+                    filter {
+                        eq("no_telp", noTelp)
+                    }
+                }
+                .decodeSingleOrNull<ProfileResponse>()
+
+            if (result != null) {
+                // 2. Jika ada, update fcm_token nya ke token HP yang sekarang
+                val updateData = TokenUpdate(newToken)
+                client.postgrest.from("profiles").update(updateData) {
+                    filter {
+                        eq("no_telp", noTelp)
+                    }
+                }
+                return@withContext result.nama ?: "Pengguna PawRanger"
+            }
+
+            // Jika null berarti nomor belum terdaftar
+            return@withContext null
+
+        } catch (e: Exception) {
+            Log.e("SOS_REPO", "Gagal verifikasi login: ${e.message}")
+            return@withContext null
         }
     }
 
