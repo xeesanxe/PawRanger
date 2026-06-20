@@ -9,7 +9,9 @@ class ContactRepository {
     private val auth = FirebaseAuth.getInstance()
 
     suspend fun getContacts(): List<Contact> {
-        val userId = auth.currentUser?.uid ?: return emptyList()
+        // Kita prioritaskan pakai ID dari Firebase Auth jika ada, 
+        // tapi sistem kita saat ini pakai Nomor HP sebagai userId
+        val userId = auth.currentUser?.uid ?: ""
 
         val snapshot = db.collection("contacts")
             .whereEqualTo("userId", userId)
@@ -27,12 +29,18 @@ class ContactRepository {
     }
 
     suspend fun insertContact(contact: Contact) {
-        val userId = auth.currentUser?.uid
+        // Gunakan userId yang dikirim dari Fragment (biasanya nomor HP user)
+        // Jika contact.userId kosong, baru coba ambil dari Firebase Auth
+        val finalUserId = if (!contact.userId.isNullOrEmpty()) {
+            contact.userId
+        } else {
+            auth.currentUser?.uid
+        }
 
         val data = hashMapOf(
             "name" to contact.name,
             "phoneNumber" to contact.phoneNumber,
-            "userId" to userId
+            "userId" to finalUserId
         )
 
         db.collection("contacts")
@@ -40,9 +48,7 @@ class ContactRepository {
             .await()
     }
 
-    suspend fun deleteContact(name: String) {
-        val userId = auth.currentUser?.uid ?: return
-
+    suspend fun deleteContact(name: String, userId: String) {
         val snapshot = db.collection("contacts")
             .whereEqualTo("userId", userId)
             .whereEqualTo("name", name)

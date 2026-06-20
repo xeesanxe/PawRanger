@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Contact(
     val id: Int = 0,
-    val name: String,
+    val name: String = "",
     @SerialName("phoneNumber")
-    val phoneNumber: String,
+    val phoneNumber: String = "",
     @SerialName("user_id")
     val userId: String? = null
 )

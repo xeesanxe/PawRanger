@@ -1,31 +1,36 @@
 package com.example.pawranger.data
 
-import com.google.firebase.auth.FirebaseAuth
+import android.content.Context
+import com.example.pawranger.utils.SessionManager
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.tasks.await
 
-class EmergencyAlertRepository {
+class EmergencyAlertRepository(context: Context) { // Tambah context biar bisa buka SessionManager
 
     private val db = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    private val sessionManager = SessionManager(context)
 
     // Kirim SOS — simpan ke Firestore
     suspend fun sendAlert(latitude: Double, longitude: Double): Boolean {
-        val userId = auth.currentUser?.uid ?: return false
+        // Tarik KTP Nomor HP lu, BUKAN dari FirebaseAuth
+        val rawPhone = sessionManager.getUserPhone() ?: return false
+        val userId = rawPhone.replace(Regex("[^0-9+]"), "")
 
-        val data = hashMapOf(
-            "userId" to userId,
-            "latitude" to latitude,
-            "longitude" to longitude,
-            "message" to "SOS! Butuh bantuan segera!",
-            "status" to "active",
-            "createdAt" to System.currentTimeMillis().toString()
+        if (userId.isEmpty()) return false
+
+        val alert = EmergencyAlert(
+            userId = userId,
+            latitude = latitude,
+            longitude = longitude,
+            message = "SOS! Butuh bantuan segera!",
+            status = "ACTIVE",
+            createdAt = System.currentTimeMillis().toString()
         )
 
         return try {
             db.collection("emergency_alerts")
-                .add(data)
+                .add(alert)
                 .await()
             true
         } catch (e: Exception) {
@@ -37,23 +42,18 @@ class EmergencyAlertRepository {
     fun listenToMyAlerts(
         onUpdate: (List<EmergencyAlert>) -> Unit
     ): ListenerRegistration {
-        val userId = auth.currentUser?.uid ?: return db.collection("emergency_alerts")
-            .addSnapshotListener { _, _ -> }
+        val rawPhone = sessionManager.getUserPhone() ?: return db.collection("emergency_alerts").addSnapshotListener { _, _ -> }
+        val userId = rawPhone.replace(Regex("[^0-9+]"), "")
 
         return db.collection("emergency_alerts")
             .whereEqualTo("userId", userId)
-            .whereEqualTo("status", "active")
+            .whereEqualTo("status", "ACTIVE")
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot == null) return@addSnapshotListener
-                val alerts = snapshot.documents.map { doc ->
-                    EmergencyAlert(
-                        userId = doc.getString("userId"),
-                        latitude = doc.getDouble("latitude"),
-                        longitude = doc.getDouble("longitude"),
-                        message = doc.getString("message"),
-                        status = doc.getString("status"),
-                        createdAt = doc.getString("createdAt")
-                    )
+
+                // Pakai toObject otomatis biar nggak usah mapping manual yang bikin error
+                val alerts = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(EmergencyAlert::class.java)
                 }
                 onUpdate(alerts)
             }

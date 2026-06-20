@@ -12,6 +12,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.pawranger.data.Contact
 import com.example.pawranger.data.ContactRepository
 import com.example.pawranger.utils.SessionManager
+import com.example.pawranger.utils.PhoneUtils
 import kotlinx.coroutines.launch
 
 class AddContactFragment : Fragment() {
@@ -50,16 +51,20 @@ class AddContactFragment : Fragment() {
             return
         }
 
-        val phone = phoneInput.replace(Regex("[^0-9]"), "")
+        val formattedContactPhone = PhoneUtils.formatPhoneNumber(phoneInput)
         val rawMyPhone = sessionManager.getUserPhone() ?: ""
-        val myPhone = rawMyPhone.replace(Regex("[^0-9]"), "")
+        val myPhone = PhoneUtils.formatPhoneNumber(rawMyPhone)
+
+        if (myPhone.isEmpty()) {
+            Toast.makeText(requireContext(), "Sesi bermasalah, silakan login ulang", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // INI YANG DIBENERIN: Pakai named parameter biar mesin nggak bingung bedain id (Int) sama nama (String)
-                val newContact = Contact(name = name, phoneNumber = phone, userId = myPhone)
-
+                val newContact = Contact(name = name, phoneNumber = formattedContactPhone, userId = myPhone)
                 repository.insertContact(newContact)
+                
                 Toast.makeText(requireContext(), "Kontak berhasil ditambahkan", Toast.LENGTH_SHORT).show()
                 findNavController().navigateUp()
             } catch (e: Exception) {

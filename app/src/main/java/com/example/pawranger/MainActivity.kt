@@ -7,190 +7,139 @@ import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.view.View
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import com.example.pawranger.data.EmergencyAlert
-import com.example.pawranger.data.SOSRepository
 import com.example.pawranger.utils.SessionManager
+import com.example.pawranger.utils.PhoneUtils
 import com.example.pawranger.utils.ViewUtils
-import com.example.pawranger.firebase.FirebaseTest
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.*
+import com.google.firebase.firestore.FirebaseFirestore
 import android.util.Log
-import androidx.lifecycle.lifecycleScope
-import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : AppCompatActivity() {
-    private val sosRepository = SOSRepository()
     private lateinit var sessionManager: SessionManager
-    private var trackingJob: Job? = null
-    private var lastAlert: EmergencyAlert? = null
     private var mediaPlayer: MediaPlayer? = null
+    private var activeDialog: AlertDialog? = null
+    private var lastAlertPhone: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Log.d("MainActivity", "onCreate started")
-        // Force Light Mode
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        FirebaseTest.testFirestore()
-        Log.d("MainActivity", "setContentView finished")
 
         sessionManager = SessionManager(this)
-        startSOSListener()
+        startGlobalSOSListener()
 
         val mainView = findViewById<View>(R.id.main)
-        if (mainView != null) {
-            ViewUtils.setupSystemBarsInsets(mainView)
-        }
+        if (mainView != null) ViewUtils.setupSystemBarsInsets(mainView)
 
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
-
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
         if (navHostFragment != null) {
             val navController = navHostFragment.navController
-            val bottomNavContainer = findViewById<View>(R.id.cv_bottom_nav)
             val bottomNavView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-
-            val fragmentContainer = findViewById<View>(R.id.nav_host_fragment)
-            if (fragmentContainer != null) {
-                // Padding bawah agar konten tidak tertutup bottom nav melayang
-                val paddingPx = (130 * resources.displayMetrics.density).toInt()
-                fragmentContainer.setPadding(0, 0, 0, paddingPx)
-            }
+            val bottomNavContainer = findViewById<View>(R.id.cv_bottom_nav)
 
             if (bottomNavView != null) {
-                bottomNavView.setOnItemSelectedListener { item ->
-                    val navOptions = NavOptions.Builder()
-                        .setLaunchSingleTop(true)
-                        .setRestoreState(true)
-                        .setPopUpTo(
-                            navController.graph.startDestinationId,
-                            inclusive = false,
-                            saveState = true
-                        )
-                        .build()
-
-                    navController.navigate(item.itemId, null, navOptions)
-                    true
-                }
+                bottomNavView.setupWithNavController(navController)
                 navController.addOnDestinationChangedListener { _, destination, _ ->
-                    val menuItem = bottomNavView.menu.findItem(destination.id)
-                    if (menuItem != null) {
-                        menuItem.isChecked = true
-                    }
-                }
-            }
-
-            navController.addOnDestinationChangedListener { _, destination, _ ->
-                if (bottomNavContainer != null) {
-                    when (destination.id) {
-                        R.id.splashFragment, R.id.loginFragment, R.id.registerFragment -> {
-                            bottomNavContainer.visibility = View.GONE
-                        }
-                        else -> {
-                            bottomNavContainer.visibility = View.VISIBLE
-                        }
+                    bottomNavContainer?.visibility = when (destination.id) {
+                        R.id.splashFragment, R.id.loginFragment, R.id.registerFragment -> View.GONE
+                        else -> View.VISIBLE
                     }
                 }
             }
         }
-
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) return@addOnCompleteListener
-            val token = task.result
-            updateFcmTokenToServer(token)
-        }
     }
 
-    private fun updateFcmTokenToServer(token: String) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                Log.d("FCM_TOKEN", "Token FCM: $token")
-            } catch (e: Exception) {
-                Log.e("FCM_TOKEN", "Error: ${e.message}")
-            }
-        }
-    }
-
-    private fun startSOSListener() {
+    private fun startGlobalSOSListener() {
+        val db = FirebaseFirestore.getInstance()
         val rawPhone = sessionManager.getUserPhone() ?: ""
-        val cleanPhone = rawPhone.replace(Regex("[^0-9]"), "")
-        if (cleanPhone.isEmpty()) return
+        val myPhone = PhoneUtils.formatPhoneNumber(rawPhone)
 
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                sosRepository.connect()
-                sosRepository.listenForAlerts(cleanPhone).collect { alert ->
-                    lastAlert = alert
-                    showSOSDialog(alert)
-                    startPeriodicReminders()
+        if (myPhone.isEmpty()) return
+
+        // Filter: Hanya dengerin alert yang statusnya ACTIVE DAN nomor gue ada di daftar kontak korban - Fase 3
+        db.collection("emergency_alerts")
+            .whereEqualTo("status", "ACTIVE")
+            .whereArrayContains("targetContacts", myPhone)
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    Log.e("MainActivity", "Listen failed: ${e.message}. Pastikan Index Firestore sudah dibuat.")
+                    return@addSnapshotListener
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+
+                if (snapshots != null && !snapshots.isEmpty) {
+                    val latestDoc = snapshots.documents.first()
+                    val alert = latestDoc.toObject(EmergencyAlert::class.java)
+
+                    if (alert != null) {
+                        handleActiveAlert(alert)
+                    }
+                } else {
+                    // Fase 5: Auto-Mute jika status berubah jadi RESOLVED
+                    stopAlarmAndDialog()
+                }
             }
-        }
     }
 
-    private fun startPeriodicReminders() {
-        trackingJob?.cancel()
-        trackingJob = CoroutineScope(Dispatchers.Main).launch {
-            while (isActive) {
-                delay(120000)
-                lastAlert?.let { alert ->
-                    showSOSDialog(alert, isReminder = true)
-                }
-            }
+    private fun handleActiveAlert(alert: EmergencyAlert) {
+        // Ganti victimPhone pakai userId sesuai cetakan data terbaru
+        val currentPhone = alert.userId ?: "unknown"
+
+        // Fase 3: Alarm Brutal
+        if (mediaPlayer == null) {
+            startAlarm()
         }
+
+        // Fase 3: Update Pop-Up jika lokasi berubah (setiap 2 menit)
+        if (activeDialog != null && lastAlertPhone == currentPhone) {
+            activeDialog?.setMessage("Nomor: ${alert.userId}\nUpdate Lokasi: ${alert.latitude}, ${alert.longitude}")
+            activeDialog?.setTitle("⚠️ UPDATE LOKASI DARURAT!")
+        } else {
+            showSOSDialog(alert)
+        }
+        lastAlertPhone = currentPhone
     }
 
-    private fun showSOSDialog(alert: EmergencyAlert, isReminder: Boolean = false) {
-        if (!isReminder) {
-            try {
-                mediaPlayer?.stop()
-                mediaPlayer?.release()
-                val alertSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                mediaPlayer = MediaPlayer.create(this, alertSound)
-                mediaPlayer?.isLooping = true
-                mediaPlayer?.start()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
+    private fun showSOSDialog(alert: EmergencyAlert) {
+        activeDialog?.dismiss()
 
-        val title = if (isReminder) "⚠️ UPDATE LOKASI DARURAT!" else "⚠️ SINYAL DARURAT!"
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setMessage("Nomor: ${alert.userId ?: "Tidak diketahui"}\nLokasi: ${alert.latitude ?: 0.0}, ${alert.longitude ?: 0.0}")
+        activeDialog = MaterialAlertDialogBuilder(this)
+            .setTitle("⚠️ SINYAL DARURAT!")
+            // Ganti victimPhone dan victimName jadi userId
+            .setMessage("Nomor: ${alert.userId}\nLokasi: ${alert.latitude}, ${alert.longitude}")
             .setCancelable(false)
             .setPositiveButton("Buka Google Maps") { _, _ ->
                 stopAlarm()
                 openInGoogleMaps(alert.latitude ?: 0.0, alert.longitude ?: 0.0)
             }
-            .setNeutralButton("Berhenti Melacak") { _, _ ->
-                stopTracking()
-            }
-            .setNegativeButton(if (isReminder) "Tutup" else "Matikan Alarm") { _, _ ->
+            .setNegativeButton("Matikan Alarm") { _, _ ->
                 stopAlarm()
             }
             .show()
     }
 
-    private fun openInGoogleMaps(lat: Double, lng: Double) {
-        val gmmIntentUri = Uri.parse("google.navigation:q=$lat,$lng")
-        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-        mapIntent.setPackage("com.google.android.apps.maps")
-        if (mapIntent.resolveActivity(packageManager) != null) {
-            startActivity(mapIntent)
-        } else {
-            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("http://maps.google.com/maps?q=$lat,$lng"))
-            startActivity(browserIntent)
+    private fun stopAlarmAndDialog() {
+        stopAlarm()
+        activeDialog?.dismiss()
+        activeDialog = null
+        lastAlertPhone = null
+    }
+
+    private fun startAlarm() {
+        try {
+            val alertSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            mediaPlayer = MediaPlayer.create(this, alertSound)
+            mediaPlayer?.isLooping = true
+            mediaPlayer?.start()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Gagal putar alarm: ${e.message}")
         }
     }
 
@@ -200,10 +149,15 @@ class MainActivity : AppCompatActivity() {
         mediaPlayer = null
     }
 
-    private fun stopTracking() {
-        stopAlarm()
-        trackingJob?.cancel()
-        trackingJob = null
-        lastAlert = null
+    private fun openInGoogleMaps(lat: Double, lng: Double) {
+        val gmmIntentUri = Uri.parse("google.navigation:q=$lat,$lng")
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+        mapIntent.setPackage("com.google.android.apps.maps")
+        if (mapIntent.resolveActivity(packageManager) != null) {
+            startActivity(mapIntent)
+        } else {
+            // Fallback ke browser jika tidak ada app Google Maps
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng")))
+        }
     }
 }

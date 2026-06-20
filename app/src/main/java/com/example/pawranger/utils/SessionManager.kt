@@ -14,6 +14,15 @@ class SessionManager(context: Context) {
         private const val PROFILE_IMAGE = "profileImage"
         private const val IS_DARK_MODE = "isDarkMode"
         private const val EMERGENCY_MESSAGE = "emergencyMessage"
+        private const val IS_SOS_ACTIVE = "isSosActive"
+    }
+
+    fun setSosActive(isActive: Boolean) {
+        prefs.edit().putBoolean(IS_SOS_ACTIVE, isActive).apply()
+    }
+
+    fun isSosActive(): Boolean {
+        return prefs.getBoolean(IS_SOS_ACTIVE, false)
     }
 
     fun setDarkMode(isDarkMode: Boolean) {

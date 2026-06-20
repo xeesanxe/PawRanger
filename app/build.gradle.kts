@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -20,7 +21,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        val mapsApiKey = project.findProperty("MAPS_API_KEY") as? String ?: ""
+
+        // Load MAPS_API_KEY from local.properties
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+        val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
