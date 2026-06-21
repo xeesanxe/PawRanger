@@ -5,7 +5,6 @@ import android.content.Intent
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
-import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.pawranger.utils.SessionManager
@@ -14,7 +13,6 @@ import com.google.android.gms.location.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
-import java.util.*
 
 class SosService : Service() {
 
@@ -23,7 +21,7 @@ class SosService : Service() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
-    
+
     private val NOTIFICATION_ID = 99
     private val CHANNEL_ID = "SOS_CHANNEL"
 
@@ -58,7 +56,7 @@ class SosService : Service() {
                     .whereEqualTo("userId", myPhone)
                     .get()
                     .await()
-                
+
                 for (doc in snapshot.documents) {
                     val p = doc.getString("phoneNumber")
                     if (p != null) contactList.add(PhoneUtils.formatPhoneNumber(p))
@@ -77,7 +75,7 @@ class SosService : Service() {
                 } catch (e: SecurityException) {
                     Log.e("SosService", "Permission error: ${e.message}")
                 }
-                delay(120000) 
+                delay(120000)
             }
         }
     }
@@ -86,7 +84,7 @@ class SosService : Service() {
         serviceScope.launch {
             try {
                 db.collection("emergency_alerts").document(myPhone)
-                    .update("status", "RESOLVED", "timestamp", System.currentTimeMillis())
+                    .update("status", "RESOLVED", "createdAt", System.currentTimeMillis().toString())
             } catch (e: Exception) {
                 Log.e("SosService", "Error resolving: ${e.message}")
             }
@@ -96,12 +94,12 @@ class SosService : Service() {
 
     private fun updateFirestoreAlert(phone: String, loc: Location, status: String, contacts: List<String>) {
         val alertData = hashMapOf(
-            "victimPhone" to phone,
-            "victimName" to (sessionManager.getUserName() ?: "User"),
+            "userId" to phone,
+            "senderName" to (sessionManager.getUserName() ?: "Ranger"),
             "latitude" to loc.latitude,
             "longitude" to loc.longitude,
             "status" to status,
-            "timestamp" to System.currentTimeMillis(),
+            "createdAt" to System.currentTimeMillis().toString(),
             "targetContacts" to contacts
         )
 

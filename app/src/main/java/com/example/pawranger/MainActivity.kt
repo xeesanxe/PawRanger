@@ -49,11 +49,34 @@ class MainActivity : AppCompatActivity() {
                 bottomNavView.setupWithNavController(navController)
                 navController.addOnDestinationChangedListener { _, destination, _ ->
                     bottomNavContainer?.visibility = when (destination.id) {
-                        R.id.splashFragment, R.id.loginFragment, R.id.registerFragment -> View.GONE
+                        R.id.splashFragment,
+                        R.id.loginFragment,
+                        R.id.registerFragment,
+                        R.id.addContactFragment -> View.GONE
                         else -> View.VISIBLE
                     }
                 }
             }
+        }
+
+        // 🔥 NANGKEP TENDANGAN FCM PAS APLIKASI MATI TOTAL
+        val isEmergency = intent.getBooleanExtra("isEmergency", false)
+        if (isEmergency) {
+            val senderName = intent.getStringExtra("senderName") ?: "Seseorang"
+            val senderPhone = intent.getStringExtra("senderPhone") ?: "Tidak diketahui"
+            val lat = intent.getStringExtra("lat")?.toDoubleOrNull() ?: 0.0
+            val lng = intent.getStringExtra("lng")?.toDoubleOrNull() ?: 0.0
+
+            // Bikin objek palsu buat mancing fungsi handleActiveAlert
+            val alertData = EmergencyAlert(
+                latitude = lat,
+                longitude = lng,
+                userId = senderPhone,
+                senderName = senderName
+            )
+
+            // Langsung lempar ke mesin pencari kontak cerdas kita
+            handleActiveAlert(alertData)
         }
     }
 
@@ -64,13 +87,12 @@ class MainActivity : AppCompatActivity() {
 
         if (myPhone.isEmpty()) return
 
-        // Filter: Hanya dengerin alert yang statusnya ACTIVE DAN nomor gue ada di daftar kontak korban - Fase 3
         db.collection("emergency_alerts")
             .whereEqualTo("status", "ACTIVE")
             .whereArrayContains("targetContacts", myPhone)
             .addSnapshotListener { snapshots, e ->
                 if (e != null) {
-                    Log.e("MainActivity", "Listen failed: ${e.message}. Pastikan Index Firestore sudah dibuat.")
+                    Log.e("MainActivity", "Listen failed: ${e.message}")
                     return@addSnapshotListener
                 }
 
@@ -82,38 +104,58 @@ class MainActivity : AppCompatActivity() {
                         handleActiveAlert(alert)
                     }
                 } else {
-                    // Fase 5: Auto-Mute jika status berubah jadi RESOLVED
                     stopAlarmAndDialog()
                 }
             }
     }
 
     private fun handleActiveAlert(alert: EmergencyAlert) {
-        // Ganti victimPhone pakai userId sesuai cetakan data terbaru
-        val currentPhone = alert.userId ?: "unknown"
+        val senderPhone = alert.userId ?: "Tidak diketahui"
+        val fallbackName = alert.senderName ?: "Seseorang"
 
-        // Fase 3: Alarm Brutal
+        if (senderPhone == "Tidak diketahui") return
+
+        val db = FirebaseFirestore.getInstance()
+        val myPhone = PhoneUtils.formatPhoneNumber(sessionManager.getUserPhone() ?: "")
+
+        // CERDAS: Cari nama pengirim di database kontak lokal penyelamat
+        db.collection("contacts")
+            .whereEqualTo("userId", myPhone)
+            .whereEqualTo("phoneNumber", senderPhone)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val finalName = if (!snapshot.isEmpty) {
+                    snapshot.documents.first().getString("name") ?: fallbackName
+                } else {
+                    fallbackName
+                }
+                displayAlertUI(alert, finalName, senderPhone)
+            }
+            .addOnFailureListener {
+                displayAlertUI(alert, fallbackName, senderPhone)
+            }
+    }
+
+    private fun displayAlertUI(alert: EmergencyAlert, senderName: String, senderPhone: String) {
         if (mediaPlayer == null) {
             startAlarm()
         }
 
-        // Fase 3: Update Pop-Up jika lokasi berubah (setiap 2 menit)
-        if (activeDialog != null && lastAlertPhone == currentPhone) {
-            activeDialog?.setMessage("Nomor: ${alert.userId}\nUpdate Lokasi: ${alert.latitude}, ${alert.longitude}")
+        if (activeDialog != null && lastAlertPhone == senderPhone) {
+            activeDialog?.setMessage("Dari: $senderName\nNomor: $senderPhone\nUpdate Lokasi: ${alert.latitude}, ${alert.longitude}")
             activeDialog?.setTitle("⚠️ UPDATE LOKASI DARURAT!")
         } else {
-            showSOSDialog(alert)
+            showSOSDialog(alert, senderName, senderPhone)
         }
-        lastAlertPhone = currentPhone
+        lastAlertPhone = senderPhone
     }
 
-    private fun showSOSDialog(alert: EmergencyAlert) {
+    private fun showSOSDialog(alert: EmergencyAlert, name: String, phone: String) {
         activeDialog?.dismiss()
 
         activeDialog = MaterialAlertDialogBuilder(this)
             .setTitle("⚠️ SINYAL DARURAT!")
-            // Ganti victimPhone dan victimName jadi userId
-            .setMessage("Nomor: ${alert.userId}\nLokasi: ${alert.latitude}, ${alert.longitude}")
+            .setMessage("Dari: $name\nNomor: $phone\nLokasi: ${alert.latitude}, ${alert.longitude}")
             .setCancelable(false)
             .setPositiveButton("Buka Google Maps") { _, _ ->
                 stopAlarm()
@@ -156,7 +198,6 @@ class MainActivity : AppCompatActivity() {
         if (mapIntent.resolveActivity(packageManager) != null) {
             startActivity(mapIntent)
         } else {
-            // Fallback ke browser jika tidak ada app Google Maps
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=$lat,$lng")))
         }
     }

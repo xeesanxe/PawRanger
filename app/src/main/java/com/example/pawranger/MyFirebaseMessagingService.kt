@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -22,28 +21,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        // Ambil data payload dari Supabase Edge Function
+        // Ambil data payload dari Edge Function / Backend
         val title = remoteMessage.data["title"] ?: "🚨 PANGGILAN DARURAT SOS!"
         val body = remoteMessage.data["body"] ?: "Seseorang butuh bantuanmu segera!"
         val latitude = remoteMessage.data["latitude"]
         val longitude = remoteMessage.data["longitude"]
 
-        sendNotification(title, body, latitude, longitude)
+        // Ambil info pengirim biar bisa dikirim ke MainActivity
+        val senderPhone = remoteMessage.data["senderPhone"] ?: "Tidak diketahui"
+        val senderName = remoteMessage.data["senderName"] ?: "Seseorang"
+
+        sendNotification(title, body, latitude, longitude, senderPhone, senderName)
     }
 
-    private fun sendNotification(title: String, messageBody: String, latitude: String?, longitude: String?) {
+    private fun sendNotification(title: String, messageBody: String, latitude: String?, longitude: String?, senderPhone: String, senderName: String) {
         val channelId = "sos_channel_id"
 
-        // Format Link Google Maps universal, langsung nembak aplikasi Maps / Browser HP
-        val intent = if (!latitude.isNullOrEmpty() && !longitude.isNullOrEmpty()) {
-            val gmapsUrl = "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"
-            Intent(Intent.ACTION_VIEW, Uri.parse(gmapsUrl)).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-        } else {
-            packageManager.getLaunchIntentForPackage(packageName)?.apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            } ?: Intent()
+        // 🔥 KUNCI FULL-SCREEN: Arahin langsung ke MainActivity bawa data darurat
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("isEmergency", true)
+            putExtra("senderPhone", senderPhone)
+            putExtra("senderName", senderName)
+            putExtra("lat", latitude)
+            putExtra("lng", longitude)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -51,7 +52,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        // Ambil suara tipe ALARM sistem HP yang paling keras
         val alarmSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
 
@@ -64,6 +64,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Channel khusus untuk alarm darurat PawRanger"
+                setBypassDnd(true) // 🔥 TEMBUS MODE JANGAN GANGGU (DND)!
 
                 val audioAttributes = AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -86,13 +87,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setSound(alarmSoundUri)
             .setVibrate(longArrayOf(0, 1000, 500, 1000, 500, 1000))
             .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM) // Kategori wajib buat nembus layar kunci
             .setContentIntent(pendingIntent)
+            .setFullScreenIntent(pendingIntent, true) // 🔥 SAKLAR WAKE UP SCREEN!
 
-        // 🔥 TRIK PAMUNGKAS: Paksa sistem Android buat ngulang suara alarm (Looping) tanpa putus
         val notification = notificationBuilder.build()
-        notification.flags = notification.flags or Notification.FLAG_INSISTENT
+        notification.flags = notification.flags or Notification.FLAG_INSISTENT // Looping alarm tanpa ampun
 
-        // Tembak ke layar
         notificationManager.notify(Random.nextInt(), notification)
     }
 }
